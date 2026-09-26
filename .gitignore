@@ -49,3 +49,8 @@
 /.env.local.php
 /last_deploy.date
 client_secret_*.json
+/qdrant_storage
+
+###> vincentlanglet/twig-cs-fixer ###
+/.twig-cs-fixer.cache
+###< vincentlanglet/twig-cs-fixer ###
