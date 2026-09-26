@@ -48,3 +48,4 @@
 /.env.local
 /.env.local.php
 /last_deploy.date
+client_secret_*.json
