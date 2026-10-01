@@ -85,7 +85,7 @@ class ApiController extends BaseController {
     $params = json_decode($request->getContent(), true);
     $userId = $utente->getId();
     // crea token univoco
-    $token = bin2hex(openssl_random_pseudo_bytes(32));
+    $token = bin2hex(random_bytes(32));
     // memorizza token+deviceId
     $utente->setDispositivo($token.'-'.$params['device']);
     $this->em->flush();
