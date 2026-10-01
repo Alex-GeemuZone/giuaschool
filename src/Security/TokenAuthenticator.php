@@ -162,6 +162,7 @@ class TokenAuthenticator extends AbstractAuthenticator {
     $otp = bin2hex(openssl_random_pseudo_bytes(64));
     $risposta['otp'] = $otp.'-'.$userId;
     // memorizza info per il login
+    // Sensibile – non modificabile senza migrazione (hash IP per binding OTP)
     $token->getUser()->setPrelogin($otp.'-'.sha1((string) $ip));
     $token->getUser()->setPreloginCreato(new DateTime());
     $this->em->flush();

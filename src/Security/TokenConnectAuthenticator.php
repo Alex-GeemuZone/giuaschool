@@ -149,6 +149,7 @@ class TokenConnectAuthenticator extends AbstractAuthenticator {
     $list = explode('-', (string) ($prelogin ?? ''));
     $otpCheck = $list[0] ?? '';
     $hashCheck = $list[1] ?? '';
+    // Sensibile – non modificabile senza migrazione (hash IP per binding OTP)
     if ($otpCheck !== $credentials['otp'] || $hashCheck !== sha1((string) $credentials['ip'])) {
       // errore token o hash invalido
       $this->logger->error('Token OTP o IP non valido nella connessione token/connect.', [
