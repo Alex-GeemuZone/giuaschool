@@ -1558,6 +1558,10 @@ class ComunicazioniUtil {
       // azione di creazione
       if (!$avviso) {
         // nuovo avviso
+        // Per Staff, permetti sempre la creazione (rimuovi controllo temporale restrittivo)
+        if ($docente instanceof Staff) {
+          return true;
+        }
         if ($data >= new DateTime('today')) {
           // data non in passato, ok
           return true;
