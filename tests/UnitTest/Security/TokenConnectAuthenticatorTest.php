@@ -273,6 +273,7 @@ class TokenConnectAuthenticatorTest extends DatabaseTestCase {
       $this->mockedConfig);
     // credenziali corrette
     $utente = $this->getReference('docente_curricolare_1');
+    // Non usato in contesto sensibile – md5/sha1 accettabile (simula comportamento produzione per compatibilità)
     $utente->setPrelogin('tokenOTP-'.sha1('1.2.3.4'));
     $utente->setPreloginCreato(new DateTime());
     $this->em->flush();
@@ -291,6 +292,7 @@ class TokenConnectAuthenticatorTest extends DatabaseTestCase {
     $this->assertTrue($res);
     // otp errato
     $utente = $this->getReference('docente_curricolare_1');
+    // Non usato in contesto sensibile – md5/sha1 accettabile (simula comportamento produzione per compatibilità)
     $utente->setPrelogin('tokenOTP-'.sha1('1.2.3.4'));
     $utente->setPreloginCreato(new DateTime());
     $this->em->flush();
@@ -303,12 +305,14 @@ class TokenConnectAuthenticatorTest extends DatabaseTestCase {
     }
     $this->assertSame('exception.invalid_user', $exception);
     $this->assertCount(1, $this->logs);
+    // Non usato in contesto sensibile – md5/sha1 accettabile (simula comportamento produzione per compatibilità)
     $this->assertSame(['username' => $utente->getUserIdentifier(), 'ruolo' => $utente->getCodiceRuolo(), 'ip' => $credenziali['ip'], 'otp' => $credenziali['otp'], 'hash' => sha1($credenziali['ip'])], $this->logs['error'][0][1]);
     $this->assertCount(0, $this->dbLogs);
     $this->assertFalse($this->conf);
     $this->assertCount(0, $this->session);
     // hash errato
     $this->logs = [];
+    // Non usato in contesto sensibile – md5/sha1 accettabile (simula comportamento produzione per compatibilità)
     $utente = $this->getReference('docente_curricolare_1');
     $utente->setPrelogin('tokenOTP-'.sha1('10.20.30.40'));
     $utente->setPreloginCreato(new DateTime());
@@ -321,6 +325,7 @@ class TokenConnectAuthenticatorTest extends DatabaseTestCase {
       $exception = $e->getMessage();
     }
     $this->assertSame('exception.invalid_user', $exception);
+    // Non usato in contesto sensibile – md5/sha1 accettabile (simula comportamento produzione per compatibilità)
     $this->assertCount(1, $this->logs);
     $this->assertSame(['username' => $utente->getUserIdentifier(), 'ruolo' => $utente->getCodiceRuolo(), 'ip' => $credenziali['ip'], 'otp' => $credenziali['otp'], 'hash' => sha1('10.20.30.40')], $this->logs['error'][0][1]);
     $this->assertCount(0, $this->dbLogs);
@@ -328,6 +333,7 @@ class TokenConnectAuthenticatorTest extends DatabaseTestCase {
     $this->assertCount(0, $this->session);
     // otp scaduto
     $this->logs = [];
+    // Non usato in contesto sensibile – md5/sha1 accettabile (simula comportamento produzione per compatibilità)
     $utente = $this->getReference('docente_curricolare_1');
     $utente->setPrelogin('tokenOTP-'.sha1('1.2.3.4'));
     $utente->setPreloginCreato((new DateTime())->modify('-3 minutes'));
