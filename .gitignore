@@ -53,3 +53,13 @@ client_secret_*.json
 ###> vincentlanglet/twig-cs-fixer ###
 /.twig-cs-fixer.cache
 ###< vincentlanglet/twig-cs-fixer ###
+
+.psalm-cache
+
+###> artefatti locali di analisi ###
+/risultato.txt
+/security_issues.json
+/CREDENZIALI_TEST.md
+/PIANO_SICUREZZA.md
+/PIANO_COMMIT.md
+###< artefatti locali di analisi ###
