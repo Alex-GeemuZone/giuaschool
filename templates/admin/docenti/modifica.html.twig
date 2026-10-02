@@ -43,12 +43,12 @@
             <a class="btn btn-primary btn-xs mr-1 mb-1" href="{{ path('docenti_password', {id: u.id, tipo: 'E'}) }}" role="button" title="Genera una nuova password e la invia all'utente tramite email">{{ 'label.email_password'|trans }}</a>
             <a class="btn btn-primary btn-xs mr-1 mb-1" href="{{ path('docenti_password', {id: u.id, tipo: 'P'}) }}" role="button" title="Genera una nuova password e la scarica come documento PDF">{{ 'label.pdf_password'|trans }}</a>
     {% if app.session.get('/CONFIG/ACCESSO/id_provider') is empty and u.otp %}
-            <a class="btn btn-danger btn-xs mr-1 mb-1" href="{{ path('docenti_reset', {id: u.id}) }}" role="button" title="Reset codice OTP">{{ 'label.reset_otp'|trans }}</a>
+            <button type="button" class="btn btn-danger btn-xs mr-1 mb-1 gs-modal-confirm-button" title="Reset codice OTP" data-toggle="modal" data-target="#gs-modal-confirm" data-titolo="{{ u.cognome ~ ' ' ~ u.nome }}" data-contenuto="{{ 'message.reset_otp'|trans }}" data-href="{{ path('docenti_reset', {id: u.id}) }}" data-csrf="{{ csrf_token('delete') }}">{{ 'label.reset_otp'|trans }}</button>
     {% endif %}
     {% if u.abilitato %}
-            <a class="btn btn-danger btn-xs mb-1" href="{{ path('docenti_abilita', {id: u.id, abilita: 0}) }}" role="button" title="Disabilita l'utente">{{ 'label.disable'|trans }}</a>
+            <button type="button" class="btn btn-danger btn-xs mb-1 gs-modal-confirm-button" title="Disabilita l'utente" data-toggle="modal" data-target="#gs-modal-confirm" data-titolo="{{ u.cognome ~ ' ' ~ u.nome }}" data-contenuto="{{ 'message.disabilita_docente'|trans }}" data-href="{{ path('docenti_abilita', {id: u.id, abilita: 0}) }}" data-csrf="{{ csrf_token('delete') }}">{{ 'label.disable'|trans }}</button>
     {% else %}
-            <a class="btn btn-success btn-xs mb-1" href="{{ path('docenti_abilita', {id: u.id, abilita: 1}) }}" role="button" title="Abilita l'utente">{{ 'label.enable'|trans }}</a>
+            <button type="button" class="btn btn-success btn-xs mb-1 gs-modal-confirm-button" title="Abilita l'utente" data-toggle="modal" data-target="#gs-modal-confirm" data-titolo="{{ u.cognome ~ ' ' ~ u.nome }}" data-contenuto="{{ 'message.abilita_docente'|trans }}" data-href="{{ path('docenti_abilita', {id: u.id, abilita: 1}) }}" data-csrf="{{ csrf_token('delete') }}">{{ 'label.enable'|trans }}</button>
     {% endif %}
             <div class="d-none" id="info-utente-{{ u.id }}">
               <dl class="row">
@@ -95,6 +95,7 @@
   </div>
   {{ include('admin/include/paginazione.html.twig', {maxPagine: dati.maxPagine, pagina: info.pagina, url: 'docenti_modifica'}) }}
   {{ include('admin/include/modal-info.html.twig') }}
+  {{ include('admin/include/modal-confirm.html.twig') }}
 </div>
 {% endblock %}
 
@@ -112,6 +113,16 @@ $(document).ready(function() {
     var contenuto = $('#'+$(e.relatedTarget).data('cont-id')).html();
     $(this).find('#gs-modal-info-titolo').html(titolo);
     $(this).find('#gs-modal-info-contenuto').html(contenuto);
+  });
+  $('#gs-modal-confirm').on('show.bs.modal', function(e) {
+    var href = $(e.relatedTarget).data('href');
+    var csrf = $(e.relatedTarget).data('csrf');
+    var titolo = $(e.relatedTarget).data('titolo');
+    var contenuto = $(e.relatedTarget).data('contenuto');
+    $(this).find('#gs-modal-confirm-titolo').html(titolo);
+    $(this).find('#gs-modal-confirm-contenuto').html(contenuto);
+    $(this).find('#gs-modal-confirm-form').attr('action', href);
+    $(this).find('#gs-modal-confirm-csrf').val(csrf);
   });
 });
 </script>

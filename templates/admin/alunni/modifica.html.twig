@@ -14,9 +14,9 @@
       '<a class="btn btn-primary btn-xs mr-1 mb-1" href="' ~ path('alunni_password', {username: a.username, tipo: 'P'}) ~ '" role="button" title="Genera una nuova password per l\'alunno e la scarica come documento PDF">' ~ 'label.pdf_password'|trans ~ '</a>'
     ] %}
     {% if a.abilitato %}
-      {% set buttons = buttons|merge(['<a class="btn btn-danger btn-xs mb-1" href="' ~ path('alunni_abilita', {id: a.id, abilita: 0}) ~ '" role="button" title="Disabilita l\'utente">' ~ 'label.disable'|trans ~ '</a>']) %}
+      {% set buttons = buttons|merge(['<button type="button" class="btn btn-danger btn-xs mb-1 gs-modal-confirm-button" title="Disabilita l\'utente" data-toggle="modal" data-target="#gs-modal-confirm" data-titolo="' ~ a ~ '" data-contenuto="' ~ 'message.disabilita_alunno'|trans ~ '" data-href="' ~ path('alunni_abilita', {id: a.id, abilita: 0}) ~ '" data-csrf="' ~ csrf_token('delete') ~ '">' ~ 'label.disable'|trans ~ '</button>']) %}
     {% else %}
-      {% set buttons = buttons|merge(['<a class="btn btn-success btn-xs mb-1" href="' ~ path('alunni_abilita', {id: a.id, abilita: 1}) ~ '" role="button" title="Abilita l\'utente">' ~ 'label.enable'|trans ~ '</a>']) %}
+      {% set buttons = buttons|merge(['<button type="button" class="btn btn-success btn-xs mb-1 gs-modal-confirm-button" title="Abilita l\'utente" data-toggle="modal" data-target="#gs-modal-confirm" data-titolo="' ~ a ~ '" data-contenuto="' ~ 'message.abilita_alunno'|trans ~ '" data-href="' ~ path('alunni_abilita', {id: a.id, abilita: 1}) ~ '" data-csrf="' ~ csrf_token('delete') ~ '">' ~ 'label.enable'|trans ~ '</button>']) %}
     {% endif %}
     {% set buttons = buttons|merge([
       '<button type="button" class="btn btn-secondary btn-xs mr-1 mb-1" data-toggle="modal" data-target="#gs-scelta-genitore" title="Genera una nuova password per il genitore e la invia tramite email" data-title="Scegli il genitore a cui inviare la password" data-button1="' ~ ((dati.genitori[a.id][0].email and dati.genitori[a.id][0].email[-6:] != '.local') ? 'Invia') ~ '" data-gen1="' ~ dati.genitori[a.id][0].nome ~ ' ' ~ dati.genitori[a.id][0].cognome ~ ' (' ~ dati.genitori[a.id][0].username ~ ')" data-email1="' ~ ((dati.genitori[a.id][0].email and dati.genitori[a.id][0].email[-6:] != '.local') ? (': ' ~ dati.genitori[a.id][0].email) : '') ~ '" data-href1="' ~ (dati.genitori[a.id][0].username ? path('alunni_password', {username: dati.genitori[a.id][0].username, tipo: 'E'}) : '#') ~ '" data-button2="' ~ ((dati.genitori[a.id][1].email and dati.genitori[a.id][1].email[-6:] != '.local') ? 'Invia') ~ '" data-gen2="' ~ dati.genitori[a.id][1].nome ~ ' ' ~ dati.genitori[a.id][1].cognome ~ ' (' ~ dati.genitori[a.id][1].username ~ ')" data-email2="' ~ ((dati.genitori[a.id][1].email and dati.genitori[a.id][1].email[-6:] != '.local') ? (': ' ~ dati.genitori[a.id][1].email) : '') ~ '" data-href2="' ~ (dati.genitori[a.id][1].username ? path('alunni_password', {username: dati.genitori[a.id][1].username, tipo: 'E'}) : '#') ~ '">' ~ 'label.email_password_genitore'|trans ~ '</button>',
@@ -53,6 +53,7 @@
     <a class="btn btn-primary btn-sm" href="{{ path('alunni_passwordFiltro', {genitore: 0}) }}" role="button" title="Genera le nuove password per gli alunni selezionati e le scarica come documento PDF">{{ 'label.pdf_password'|trans }}</a>
     <a class="btn btn-primary btn-sm" href="{{ path('alunni_passwordFiltro', {genitore: 1}) }}" role="button" title="Genera le nuove password per i genitori degli alunni selezionati e le scarica come documento PDF">{{ 'label.pdf_password_genitore'|trans }}</a>
   </div>
+  {{ include('admin/include/modal-confirm.html.twig') }}
 </div>
 {% endblock %}
 
@@ -94,6 +95,16 @@ $(document).ready(function() {
     var p = $("#jumpToPage").val();
     window.location.href = "{{ path('alunni_modifica') }}/"+p;
     return false;
+  });
+  $('#gs-modal-confirm').on('show.bs.modal', function(e) {
+    var href = $(e.relatedTarget).data('href');
+    var csrf = $(e.relatedTarget).data('csrf');
+    var titolo = $(e.relatedTarget).data('titolo');
+    var contenuto = $(e.relatedTarget).data('contenuto');
+    $(this).find('#gs-modal-confirm-titolo').html(titolo);
+    $(this).find('#gs-modal-confirm-contenuto').html(contenuto);
+    $(this).find('#gs-modal-confirm-form').attr('action', href);
+    $(this).find('#gs-modal-confirm-csrf').val(csrf);
   });
 });
 </script>

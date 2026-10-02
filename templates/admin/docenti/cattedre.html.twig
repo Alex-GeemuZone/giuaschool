@@ -42,9 +42,9 @@
           <td class="pb-0">
             <a class="btn btn-primary btn-xs mr-1 mb-1" href="{{ path('docenti_cattedre_edit', {id: c.id}) }}" role="button" title="Modifica i dati della cattedra"><i class="fas fa-edit"></i></a>
     {% if c.attiva %}
-            <a class="btn btn-danger btn-xs mb-1" href="{{ path('docenti_cattedre_abilita', {id: c.id, abilita: 0}) }}" role="button" title="Disabilita la cattedra"><i class="fas fa-ban"></i></a>
+            <button type="button" class="btn btn-danger btn-xs mb-1 gs-modal-confirm-button" title="Disabilita la cattedra" data-toggle="modal" data-target="#gs-modal-confirm" data-titolo="{{ c }}" data-contenuto="{{ 'message.disabilita_cattedra'|trans }}" data-href="{{ path('docenti_cattedre_abilita', {id: c.id, abilita: 0}) }}" data-csrf="{{ csrf_token('delete') }}"><i class="fas fa-ban"></i></button>
     {% else %}
-            <a class="btn btn-success btn-xs mb-1" href="{{ path('docenti_cattedre_abilita', {id: c.id, abilita: 1}) }}" role="button" title="Abilita la cattedra"><i class="fas fa-check"></i></a>
+            <button type="button" class="btn btn-success btn-xs mb-1 gs-modal-confirm-button" title="Abilita la cattedra" data-toggle="modal" data-target="#gs-modal-confirm" data-titolo="{{ c }}" data-contenuto="{{ 'message.abilita_cattedra'|trans }}" data-href="{{ path('docenti_cattedre_abilita', {id: c.id, abilita: 1}) }}" data-csrf="{{ csrf_token('delete') }}"><i class="fas fa-check"></i></button>
     {% endif %}
           </td>
         </tr>
@@ -70,6 +70,7 @@
     <a class="btn btn-primary btn-sm" href="{{ path('docenti_cattedre_supplenza') }}" role="button" title="Nuova cattedra di supplenza">Aggiungi supplenza</a>
   </div>
   {{ include('admin/include/paginazione.html.twig', {maxPagine: dati.maxPagine, pagina: info.pagina, url: 'docenti_cattedre'}) }}
+  {{ include('admin/include/modal-confirm.html.twig') }}
 </div>
 {% endblock %}
 
@@ -81,6 +82,16 @@ $(document).ready(function() {
     var p = $("#jumpToPage").val();
     window.location.href = "{{ path('docenti_cattedre') }}/"+p;
     return false;
+  });
+  $('#gs-modal-confirm').on('show.bs.modal', function(e) {
+    var href = $(e.relatedTarget).data('href');
+    var csrf = $(e.relatedTarget).data('csrf');
+    var titolo = $(e.relatedTarget).data('titolo');
+    var contenuto = $(e.relatedTarget).data('contenuto');
+    $(this).find('#gs-modal-confirm-titolo').html(titolo);
+    $(this).find('#gs-modal-confirm-contenuto').html(contenuto);
+    $(this).find('#gs-modal-confirm-form').attr('action', href);
+    $(this).find('#gs-modal-confirm-csrf').val(csrf);
   });
 });
 </script>
