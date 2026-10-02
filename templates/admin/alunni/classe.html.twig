@@ -27,7 +27,7 @@
           <td><small>{{ c.cambio.note }}</small></td>
           <td class="pb-0">
             <a class="btn btn-primary btn-xs mr-1 mb-1" href="{{ path('alunni_classe_edit', {id: c.cambio.id}) }}" role="button" title="Modifica i dati del cambio classe"><i class="fas fa-edit"></i></a>
-            <a class="btn btn-danger btn-xs mr-1 mb-1" href="{{ path('alunni_classe_delete', {id: c.cambio.id}) }}" role="button" title="Cancella i dati del cambio classe"><i class="fas fa-trash"></i></a>
+            <button type="button" class="btn btn-danger btn-xs mr-1 mb-1 gs-modal-confirm-button" title="Cancella i dati del cambio classe" data-toggle="modal" data-target="#gs-modal-confirm" data-titolo="{{ c.cognome }} {{ c.nome }}" data-contenuto="{{ 'message.cancella_cambio_classe'|trans }}" data-href="{{ path('alunni_classe_delete', {id: c.cambio.id}) }}" data-csrf="{{ csrf_token('delete') }}"><i class="fas fa-trash"></i></button>
           </td>
         </tr>
   {% endfor %}
@@ -56,6 +56,7 @@
     <a class="btn btn-primary btn-sm mr-1 mb-1" href="{{ path('alunni_classe_edit', {id: 0, tipo: 'S'}) }}" role="button" title="Nuovo cambio di sezione di un alunno">{{ 'label.alunno_cambio_sezione'|trans }}</a>
   </div>
   {{ include('admin/include/paginazione.html.twig', {maxPagine: dati.maxPagine, pagina: info.pagina, url: 'alunni_classe'}) }}
+  {{ include('admin/include/modal-confirm.html.twig') }}
 </div>
 {% endblock %}
 
@@ -67,6 +68,16 @@ $(document).ready(function() {
     var p = $("#jumpToPage").val();
     window.location.href = "{{ path('alunni_classe') }}/"+p;
     return false;
+  });
+  $('#gs-modal-confirm').on('show.bs.modal', function(e) {
+    var href = $(e.relatedTarget).data('href');
+    var csrf = $(e.relatedTarget).data('csrf');
+    var titolo = $(e.relatedTarget).data('titolo');
+    var contenuto = $(e.relatedTarget).data('contenuto');
+    $(this).find('#gs-modal-confirm-titolo').html(titolo);
+    $(this).find('#gs-modal-confirm-contenuto').html(contenuto);
+    $(this).find('#gs-modal-confirm-form').attr('action', href);
+    $(this).find('#gs-modal-confirm-csrf').val(csrf);
   });
 });
 </script>
