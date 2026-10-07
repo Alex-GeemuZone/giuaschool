@@ -165,6 +165,38 @@ class FormAuthenticator extends AbstractAuthenticator {
     $idProviderTipo = $this->em->getRepository(Configurazione::class)->getParametro('id_provider_tipo');
     $spid = $this->em->getRepository(Configurazione::class)->getParametro('spid');
     $loginSpeciale = $credentials['login_speciale'];
+    // verifica che il tipo di accesso sia compatibile con l'utente
+    $this->controllaTipoAccesso($spid, $idProvider, $idProviderTipo, $loginSpeciale, $user, $credentials);
+    // controlla password
+    if ($this->hasher->isPasswordValid($user, $credentials['password'])) {
+      // password ok: se previsto, controlla anche l'OTP
+      $this->controllaOtp($user, $credentials, $loginSpeciale);
+      // validazione corretta
+      return true;
+    }
+    // validazione fallita
+    $this->logger->error('Password errata nella richiesta di login.', [
+      'username' => $user->getUserIdentifier(),
+      'ruolo' => $user->getCodiceRuolo(),
+      'login_speciale' => $loginSpeciale,
+      'ip' => $credentials['ip']]);
+    throw new CustomUserMessageAuthenticationException('exception.invalid_credentials');
+  }
+
+  /**
+   * Verifica che il tipo di accesso utilizzato sia compatibile con il tipo di utente.
+   * Se non lo è, registra l'errore e genera un'eccezione di autenticazione.
+   *
+   * @param mixed $spid Modalità di accesso con SPID/CIE
+   * @param mixed $idProvider Ruolo che deve accedere tramite identity provider
+   * @param mixed $idProviderTipo Ruolo previsto per l'accesso con identity provider
+   * @param mixed $loginSpeciale Vero se è stato effettuato il login speciale
+   * @param UserInterface $user Utente da autenticare
+   * @param mixed $credentials Credenziali dell'autenticazione
+   *
+   * @throws CustomUserMessageAuthenticationException Eccezione con il messaggio da mostrare all'utente
+   */
+  private function controllaTipoAccesso(mixed $spid, mixed $idProvider, mixed $idProviderTipo, mixed $loginSpeciale, UserInterface $user, mixed $credentials): void {
     // se SPID/CIE è obbligatorio e non è stato effettuato il login speciale
     if ($spid == 'obbligatorio' && !$loginSpeciale) {
       // errore: utente deve usare accesso SPID/CIE
@@ -183,50 +215,51 @@ class FormAuthenticator extends AbstractAuthenticator {
         'ip' => $credentials['ip']]);
       throw new CustomUserMessageAuthenticationException('exception.invalid_user_type_form');
     }
-    // controlla password
-    if ($this->hasher->isPasswordValid($user, $credentials['password'])) {
-      // password ok
-      $otpTipo = $this->em->getRepository(Configurazione::class)->getParametro('otp_tipo');
-      // se l'utente ha OTP attivo e il ruolo corretto e non è stato effettuato il login speciale
-      if ($user->getOtp() && $user->controllaRuolo($otpTipo) && !$loginSpeciale) {
-        // controlla otp
-        if ($this->otp->controllaOtp($user->getOtp(), $credentials['otp'])) {
-          // otp corretto
-          if ($credentials['otp'] != $user->getUltimoOtp()) {
-            // ok
-            return true;
-          } else {
-            // otp riusato (replay attack?)
-            $otp_errore_log = 'OTP riusato (replay attack) nella richiesta di login.';
-            $otp_errore_messaggio = 'exception.invalid_credentials';
-          }
-        } elseif (empty($credentials['otp'])) {
-          // no OTP
-          $otp_errore_log = 'OTP non presente nella richiesta di login.';
-          $otp_errore_messaggio = 'exception.missing_otp_credentials';
-        } else {
-          // OTP errato
-          $otp_errore_log = 'OTP errato nella richiesta di login.';
-          $otp_errore_messaggio = 'exception.invalid_credentials';
-        }
-        // validazione fallita
-        $this->logger->error($otp_errore_log, [
-          'username' => $user->getUserIdentifier(),
-          'ruolo' => $user->getCodiceRuolo(),
-          'login_speciale' => $loginSpeciale,
-          'ip' => $credentials['ip']]);
-        throw new CustomUserMessageAuthenticationException($otp_errore_messaggio);
+  }
+
+  /**
+   * Verifica il codice OTP dell'utente, se previsto per il suo tipo.
+   * Se il codice è errato, registra l'errore e genera un'eccezione di autenticazione.
+   *
+   * @param UserInterface $user Utente da autenticare
+   * @param mixed $credentials Credenziali dell'autenticazione
+   * @param mixed $loginSpeciale Vero se è stato effettuato il login speciale
+   *
+   * @throws CustomUserMessageAuthenticationException Eccezione con il messaggio da mostrare all'utente
+   */
+  private function controllaOtp(UserInterface $user, mixed $credentials, mixed $loginSpeciale): void {
+    $otpTipo = $this->em->getRepository(Configurazione::class)->getParametro('otp_tipo');
+    // se l'utente non ha OTP attivo o non è previsto per il suo ruolo, non c'è nulla da controllare
+    if (!$user->getOtp() || !$user->controllaRuolo($otpTipo) || $loginSpeciale) {
+      return;
+    }
+    // determina l'esito del controllo del codice OTP
+    if ($this->otp->controllaOtp($user->getOtp(), $credentials['otp'])) {
+      // otp corretto
+      if ($credentials['otp'] == $user->getUltimoOtp()) {
+        // otp riusato (replay attack?)
+        $otp_errore_log = 'OTP riusato (replay attack) nella richiesta di login.';
+        $otp_errore_messaggio = 'exception.invalid_credentials';
+      } else {
+        // ok
+        return;
       }
-      // validazione corretta
-      return true;
+    } elseif (empty($credentials['otp'])) {
+      // no OTP
+      $otp_errore_log = 'OTP non presente nella richiesta di login.';
+      $otp_errore_messaggio = 'exception.missing_otp_credentials';
+    } else {
+      // OTP errato
+      $otp_errore_log = 'OTP errato nella richiesta di login.';
+      $otp_errore_messaggio = 'exception.invalid_credentials';
     }
     // validazione fallita
-    $this->logger->error('Password errata nella richiesta di login.', [
+    $this->logger->error($otp_errore_log, [
       'username' => $user->getUserIdentifier(),
       'ruolo' => $user->getCodiceRuolo(),
       'login_speciale' => $loginSpeciale,
       'ip' => $credentials['ip']]);
-    throw new CustomUserMessageAuthenticationException('exception.invalid_credentials');
+    throw new CustomUserMessageAuthenticationException($otp_errore_messaggio);
   }
 
   /**
