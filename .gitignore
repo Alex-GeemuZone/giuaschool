@@ -62,4 +62,9 @@ client_secret_*.json
 /CREDENZIALI_TEST.md
 /PIANO_SICUREZZA.md
 /PIANO_COMMIT.md
+/audit_qa.py
+/routes.json
+/report_qa/
+/tools/
+/var/server_dev.log
 ###< artefatti locali di analisi ###
