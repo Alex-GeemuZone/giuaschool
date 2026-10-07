@@ -10,6 +10,7 @@ namespace App\Install;
 
 require_once __DIR__.'/DataMigrator.php';
 
+use App\Exception\InstallException;
 use Exception;
 use PDO;
 use Symfony\Component\PasswordHasher\Hasher\PasswordHasherFactory;
@@ -134,7 +135,7 @@ class Updater {
       $page['text'] = "Correggi l'errore e riprova.";
       $page['error'] = 'update.php?token='.$this->sys['token'].'&step='.
         ($e->getCode() > 0 ? $e->getCode() : 1);
-      include($this->publicPath.'/install/update_page.php');
+      include $this->publicPath.'/install/update_page.php'; //NOSONAR php:S2003 - la pagina va inclusa a ogni passo/errore
     }
   }
 
@@ -161,7 +162,7 @@ class Updater {
       $page['text'] = "Correggi l'errore e riprova.";
       $page['error'] = 'app.php?token='.$this->sys['token'].'&step='.
         ($e->getCode() > 0 ? $e->getCode() : 1);
-      include($this->publicPath.'/install/update_page.php');
+      include $this->publicPath.'/install/update_page.php'; //NOSONAR php:S2003 - la pagina va inclusa a ogni passo/errore
     }
   }
 
@@ -273,21 +274,21 @@ class Updater {
     if (empty($token) || empty($this->sys['token']) ||
       !hash_equals((string) $this->sys['token'], (string) $token)) {
       // errore di sicurezza
-      throw new Exception('Errore di sicurezza nell\'invio dei dati', 0);
+      throw new InstallException('Errore di sicurezza nell\'invio dei dati', 0);
     }
     // controlla versione
     $version = $this->getParameter('versione', '0');
     $build = $this->getParameter('versione_build', '0');
     if (empty($version) || version_compare($version, '1.4.0', '<')) {
       // versione non configurata o precedente a 1.4.0
-      throw new Exception('Non è possibile effettuare l\'aggiornamento dalla versione attuale ['.$version.']', 0);
+      throw new InstallException('Non è possibile effettuare l\'aggiornamento dalla versione attuale ['.$version.']', 0);
     } elseif (version_compare($version, $this->sys['version'], '>')) {
       // sistema già aggiornato
-      throw new Exception('Il sistema risulta già aggiornato alla versione '.$version, 0);
+      throw new InstallException('Il sistema risulta già aggiornato alla versione '.$version, 0);
     } elseif (version_compare($version, $this->sys['version'], '=') &&
               ($this->sys['build'] == '0' || $this->sys['build'] == $build)) {
       // sistema già aggiornato
-      throw new Exception('Il sistema risulta già aggiornato alla versione '.$version, 0);
+      throw new InstallException('Il sistema risulta già aggiornato alla versione '.$version, 0);
     }
     // converte nomi file per compatibilità
     foreach (glob($this->projectPath.'/src/Install/giuaschool-*-v*.zip') as $file) {
@@ -317,7 +318,7 @@ class Updater {
     if (empty($token) || empty($this->sys['token']) ||
       !hash_equals((string) $this->sys['token'], (string) $token)) {
       // errore di sicurezza
-      throw new Exception('Errore di sicurezza nell\'invio dei dati', 0);
+      throw new InstallException('Errore di sicurezza nell\'invio dei dati', 0);
     }
   }
 
@@ -332,13 +333,13 @@ class Updater {
 
     // errore se non impostata
     if ($url === '') {
-      throw new Exception('Parametro DATABASE_URL non configurato. Impostare la connessione al database.');
+      throw new InstallException('Parametro DATABASE_URL non configurato. Impostare la connessione al database.');
     }
 
     // parsing URL
     $db = parse_url($url);
     if ($db === false || empty($db['scheme']) || empty($db['host'])) {
-      throw new Exception('Parametro DATABASE_URL non valido.');
+      throw new InstallException('Parametro DATABASE_URL non valido.');
     }
 
     // credenziali
@@ -467,7 +468,7 @@ class Updater {
       'envDelete' => [],
       'procedure' => []];
     foreach ($updates as $update) {
-      $info = include($update[0]);
+      $info = include $update[0]; //NOSONAR php:S2003 - il valore di ritorno e' necessario ad ogni aggiornamento
       // comandi SQL e controllo: in array separati o in unico array
       if (empty($info['sqlCheck'])) {
         // separa in due array distinti
@@ -526,7 +527,7 @@ class Updater {
     $zip = new ZipArchive();
     if ($zip->open($zipPath) !== true) {
       // errore
-      throw new Exception('Errore nell\'apertura del file ZIP.', $step);
+      throw new InstallException('Errore nell\'apertura del file ZIP.', $step);
     }
     // estrae file
     for($i = 0; $i < $zip->numFiles; $i++) {
@@ -546,7 +547,7 @@ class Updater {
         $success = $zip->extractTo('../..', [$zip->getNameIndex($i)]);
         if (!$success) {
           // errore
-          throw new Exception('Errore nell\'estrazione del file "'.$zip->getNameIndex($i).'"', $step);
+          throw new InstallException('Errore nell\'estrazione del file "'.$zip->getNameIndex($i).'"', $step);
         }
       }
     }
@@ -558,7 +559,7 @@ class Updater {
     $page['title'] = 'Estrazione dei file';
     $page['success'] = 'I file sono stati estratti correttamente.';
     $page['url'] = 'update.php?token='.$this->sys['token'].'&step='.($step + 1);
-    include($this->publicPath.'/install/update_page.php');
+    include $this->publicPath.'/install/update_page.php'; //NOSONAR php:S2003 - la pagina va inclusa a ogni passo/errore
   }
 
   /**
@@ -591,7 +592,7 @@ class Updater {
         }
         if (!$success) {
           // errore
-          throw new Exception('Errore nel copiare il file "'.$file.'"', $step);
+          throw new InstallException('Errore nel copiare il file "'.$file.'"', $step);
         }
       }
     }
@@ -611,7 +612,7 @@ class Updater {
         }
         if (!$success) {
           // errore
-          throw new Exception('Errore nel cancellare il file "'.$file.'"', $step);
+          throw new InstallException('Errore nel cancellare il file "'.$file.'"', $step);
         }
       }
     }
@@ -621,7 +622,7 @@ class Updater {
     $page['title'] = 'Aggiornamento dei file e delle directory';
     $page['success'] = 'I file e le directory sono stati aggiornati correttamente.';
     $page['url'] = 'update.php?token='.$this->sys['token'].'&step='.($step + 1);
-    include($this->publicPath.'/install/update_page.php');
+    include $this->publicPath.'/install/update_page.php'; //NOSONAR php:S2003 - la pagina va inclusa a ogni passo/errore
   }
 
   /**
@@ -639,7 +640,7 @@ class Updater {
     // controlla coerenza dati
     if (count($updates['sqlCommand']) != count($updates['sqlCheck'])) {
       // errore
-      throw new Exception('Errore nelle informazioni di aggiornamento per il database', $step);
+      throw new InstallException('Errore nelle informazioni di aggiornamento per il database', $step);
     }
     // aggiorna database
     $this->pdo->exec('SET FOREIGN_KEY_CHECKS = 0;');
@@ -663,7 +664,7 @@ class Updater {
         try {
           $this->pdo->exec($sql);
         } catch (Exception) {
-          throw new Exception('Errore nell\'esecuzione dei comandi per l\'aggiornamento del database<br>'.
+          throw new InstallException('Errore nell\'esecuzione dei comandi per l\'aggiornamento del database<br>'.
             '['.$sql.']', $step);
         }
       }
@@ -675,7 +676,7 @@ class Updater {
     $page['title'] = 'Aggiornamento del database';
     $page['success'] = 'Il database è stato correttamente aggiornato alla nuova versione.';
     $page['url'] = 'update.php?token='.$this->sys['token'].'&step='.($step + 1);
-    include($this->publicPath.'/install/update_page.php');
+    include $this->publicPath.'/install/update_page.php'; //NOSONAR php:S2003 - la pagina va inclusa a ogni passo/errore
   }
 
   /**
@@ -694,7 +695,7 @@ class Updater {
     $page['title'] = 'Aggiornamento del contenuto del file ".env"';
     $page['success'] = 'Il file ".env" è stato correttamente aggiornato alla nuova versione.';
     $page['url'] = 'update.php?token='.$this->sys['token'].'&step='.($step + 1);
-    include($this->publicPath.'/install/update_page.php');
+    include $this->publicPath.'/install/update_page.php'; //NOSONAR php:S2003 - la pagina va inclusa a ogni passo/errore
   }
 
   /**
@@ -731,7 +732,7 @@ class Updater {
     $page['title'] = 'Pulizia finale della cache e dei file di installazione';
     $page['success'] = 'I file sono stati correttamente rimossi.';
     $page['url'] = 'update.php?token='.$this->sys['token'].'&step='.($step + 1);
-    include($this->publicPath.'/install/update_page.php');
+    include $this->publicPath.'/install/update_page.php'; //NOSONAR php:S2003 - la pagina va inclusa a ogni passo/errore
   }
 
   /**
@@ -754,7 +755,7 @@ class Updater {
     $page['title'] = 'Procedura di installazione terminata';
     $page['success'] = 'La procedura di installazione è terminata con successo.';
     $page['text'] = 'Ora puoi andare alla <a href="'.$this->urlPath.'/">pagina principale</a>.';
-    include($this->publicPath.'/install/update_page.php');
+    include $this->publicPath.'/install/update_page.php'; //NOSONAR php:S2003 - la pagina va inclusa a ogni passo/errore
   }
 
   /**
@@ -959,7 +960,7 @@ class Updater {
         "Il sistema non soddisfa i requisiti tecnici indispensabili per il funzionameno dell'applicazione.";
       $page['error'] = $pageUrl.'?token='.$this->sys['token'].'&step='.$step;
     }
-    include($this->publicPath.'/install/update_page.php');
+    include $this->publicPath.'/install/update_page.php'; //NOSONAR php:S2003 - la pagina va inclusa a ogni passo/errore
   }
 
   /**
@@ -985,7 +986,7 @@ class Updater {
         "Il sistema non soddisfa i requisiti tecnici indispensabili per il funzionameno dell'applicazione.";
       $page['error'] = $pageUrl.'?token='.$this->sys['token'].'&step='.$step;
     }
-    include($this->publicPath.'/install/update_page.php');
+    include $this->publicPath.'/install/update_page.php'; //NOSONAR php:S2003 - la pagina va inclusa a ogni passo/errore
   }
 
   /**
@@ -1002,16 +1003,16 @@ class Updater {
       $dbName = (string) ($_POST['install']['db_name'] ?? '');
 
       if (!preg_match('/^[a-zA-Z0-9_\-]+$/', $dbName)) {
-        throw new Exception('Nome del database non valido. Sono consentiti solo caratteri alfanumerici, trattini e trattini bassi.', $step);
+        throw new InstallException('Nome del database non valido. Sono consentiti solo caratteri alfanumerici, trattini e trattini bassi.', $step);
       }
       if (!preg_match('/^[a-zA-Z0-9_\.\-]+$/', $dbServer)) {
-        throw new Exception('Nome server database non valido.', $step);
+        throw new InstallException('Nome server database non valido.', $step);
       }
       if ($dbPort !== '' && (!ctype_digit($dbPort) || (int) $dbPort < 1 || (int) $dbPort > 65535)) {
-        throw new Exception('Porta database non valida.', $step);
+        throw new InstallException('Porta database non valida.', $step);
       }
       if (!preg_match('/^[a-zA-Z0-9_\.\-]+$/', $dbUser)) {
-        throw new Exception('Nome utente database non valido.', $step);
+        throw new InstallException('Nome utente database non valido.', $step);
       }
 
       // salva configurazione
@@ -1052,7 +1053,7 @@ class Updater {
     $page['version'] = 'INSTALL';
     $page['step'] = $step.' - Impostazioni database';
     $page['title'] = 'Impostazioni per la connessione al database';
-    include($this->publicPath.'/install/update_page.php');
+    include $this->publicPath.'/install/update_page.php'; //NOSONAR php:S2003 - la pagina va inclusa a ogni passo/errore
   }
 
   /**
@@ -1092,7 +1093,7 @@ class Updater {
     $page['title'] = 'Creazione del database iniziale';
     $page['success'] = 'Il nuovo database è stato creato correttamente.';
     $page['url'] = 'app.php?token='.$this->sys['token'].'&step='.($step + 1);
-    include($this->publicPath.'/install/update_page.php');
+    include $this->publicPath.'/install/update_page.php'; //NOSONAR php:S2003 - la pagina va inclusa a ogni passo/errore
   }
 
   /**
@@ -1106,23 +1107,23 @@ class Updater {
       $username = trim((string) $_POST['install']['username']);
       if (strlen($username) < 4) {
         // username troppo corto
-        throw new Exception('Il nome utente deve avere una lunghezza di almeno 4 caratteri', $step);
+        throw new InstallException('Il nome utente deve avere una lunghezza di almeno 4 caratteri', $step);
       }
       $password = trim((string) $_POST['install']['password']);
       if (strlen($password) < 8) {
         // password troppo corta
-        throw new Exception('La password deve avere una lunghezza di almeno 8 caratteri', $step);
+        throw new InstallException('La password deve avere una lunghezza di almeno 8 caratteri', $step);
       }
       // codifica password
-      require $this->projectPath.'/vendor/symfony/password-hasher/PasswordHasherInterface.php';
-      require $this->projectPath.'/vendor/symfony/password-hasher/LegacyPasswordHasherInterface.php';
-      require $this->projectPath.'/vendor/symfony/password-hasher/Hasher/PasswordHasherFactoryInterface.php';
-      require $this->projectPath.'/vendor/symfony/password-hasher/Hasher/PasswordHasherFactory.php';
-      require $this->projectPath.'/vendor/symfony/password-hasher/Hasher/CheckPasswordLengthTrait.php';
-      require $this->projectPath.'/vendor/symfony/password-hasher/Hasher/SodiumPasswordHasher.php';
-      require $this->projectPath.'/vendor/symfony/password-hasher/Hasher/NativePasswordHasher.php';
-      require $this->projectPath.'/vendor/symfony/password-hasher/Hasher/Pbkdf2PasswordHasher.php';
-      require $this->projectPath.'/vendor/symfony/password-hasher/Hasher/MigratingPasswordHasher.php';
+      require_once $this->projectPath.'/vendor/symfony/password-hasher/PasswordHasherInterface.php';
+      require_once $this->projectPath.'/vendor/symfony/password-hasher/LegacyPasswordHasherInterface.php';
+      require_once $this->projectPath.'/vendor/symfony/password-hasher/Hasher/PasswordHasherFactoryInterface.php';
+      require_once $this->projectPath.'/vendor/symfony/password-hasher/Hasher/PasswordHasherFactory.php';
+      require_once $this->projectPath.'/vendor/symfony/password-hasher/Hasher/CheckPasswordLengthTrait.php';
+      require_once $this->projectPath.'/vendor/symfony/password-hasher/Hasher/SodiumPasswordHasher.php';
+      require_once $this->projectPath.'/vendor/symfony/password-hasher/Hasher/NativePasswordHasher.php';
+      require_once $this->projectPath.'/vendor/symfony/password-hasher/Hasher/Pbkdf2PasswordHasher.php';
+      require_once $this->projectPath.'/vendor/symfony/password-hasher/Hasher/MigratingPasswordHasher.php';
       $factory = new PasswordHasherFactory(
         ['common' => ['algorithm' => 'auto']]);
       $passwordHasher = $factory->getPasswordHasher('common');
@@ -1148,7 +1149,7 @@ class Updater {
     $page['version'] = 'INSTALL';
     $page['step'] = $step.' - Utente amministratore';
     $page['title'] = 'Credenziali di accesso per l\'utente amministratore';
-    include($this->publicPath.'/install/update_page.php');
+    include $this->publicPath.'/install/update_page.php'; //NOSONAR php:S2003 - la pagina va inclusa a ogni passo/errore
   }
 
   /**
@@ -1170,7 +1171,7 @@ class Updater {
     $page['title'] = 'Pulizia finale della cache e dei file di installazione';
     $page['success'] = 'I file sono stati correttamente rimossi.';
     $page['url'] = 'app.php?token='.$this->sys['token'].'&step='.($step + 1);
-    include($this->publicPath.'/install/update_page.php');
+    include $this->publicPath.'/install/update_page.php'; //NOSONAR php:S2003 - la pagina va inclusa a ogni passo/errore
   }
 
   /**
@@ -1190,7 +1191,7 @@ class Updater {
     $page['success'] = 'La procedura di installazione è terminata con successo.';
     $page['warning'] = 'Viene eliminata la pagina iniziale della procedura di installazione "install/app.php" per motivi di sicurezza.';
     $page['text'] = 'Ora puoi andare alla <a href="'.$this->urlPath.'/">pagina principale</a>.';
-    include($this->publicPath.'/install/update_page.php');
+    include $this->publicPath.'/install/update_page.php'; //NOSONAR php:S2003 - la pagina va inclusa a ogni passo/errore
   }
 
   /**
@@ -1211,7 +1212,7 @@ class Updater {
     $subStep = isset($_GET['sub']) ? (int) $_GET['sub'] : 0;
     // controlla che il substep esista
     if (!isset($updates['procedure'][$subStep]) || !is_string($updates['procedure'][$subStep])) {
-      throw new Exception('Procedura di aggiornamento non valida', $step);
+      throw new InstallException('Procedura di aggiornamento non valida', $step);
     }
     // esegue procedura di aggiornamento
     eval($updates['procedure'][$subStep]);
@@ -1226,7 +1227,7 @@ class Updater {
       unset($subStep);
     }
     $page['url'] = 'update.php?token='.$this->sys['token'].'&step='.$step.(isset($subStep) ? '&sub='.$subStep : '');
-    include($this->publicPath.'/install/update_page.php');
+    include $this->publicPath.'/install/update_page.php'; //NOSONAR php:S2003 - la pagina va inclusa a ogni passo/errore
   }
 
 }
