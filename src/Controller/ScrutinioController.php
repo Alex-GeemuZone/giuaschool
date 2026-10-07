@@ -1854,7 +1854,7 @@ class ScrutinioController extends BaseController {
     // visualizza pagina
     return $this->render('coordinatore/verbale_'.strtolower((string) $passo_verbale[0]).'.html.twig', [
       'classe' => $classe,
-	    'dati' => $dati,
+      'dati' => $dati,
       'form' => ($form ? $form->createView() : null)]);
   }
 
@@ -1938,7 +1938,7 @@ class ScrutinioController extends BaseController {
         'entry_type' => VotoScrutinioType::class,
         'entry_options' => ['label' => false, 'form_mode' => 'edcivica']])
       ->add('submit', SubmitType::class, ['label' => 'label.submit',
-	      'attr' =>['class' => 'btn-primary']])
+        'attr' =>['class' => 'btn-primary']])
       ->getForm();
     $form->handleRequest($request);
     if ($form->isSubmitted() && $form->isValid()) {
@@ -1983,7 +1983,7 @@ class ScrutinioController extends BaseController {
     // visualizza pagina
     return $this->render('coordinatore/edcivica_'.$periodo.'.html.twig', [
       'classe' => $classe,
-	    'dati' => $dati,
+      'dati' => $dati,
       'form' => $form->createView()]);
   }
 
@@ -2226,7 +2226,7 @@ class ScrutinioController extends BaseController {
         'trim' => true,
         'required' => true])
       ->add('submit', SubmitType::class, ['label' => 'label.submit',
-	      'attr' => ['class' => 'btn-primary']])
+        'attr' => ['class' => 'btn-primary']])
       ->getForm();
     $form->handleRequest($request);
     if ($form->isSubmitted() && $form->isValid()) {

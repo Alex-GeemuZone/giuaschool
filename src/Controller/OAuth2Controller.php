@@ -32,7 +32,7 @@ class OAuth2Controller extends BaseController {
   public function google(ClientRegistry $clientRegistry): Response {
     // redirezione all'ID provider di Google
     return $clientRegistry->getClient('gsuite')->redirect([], []);
-	}
+  }
 
   /**
    * Esegue autenticazione su Google Workspace tramite GsuiteAuthenticator

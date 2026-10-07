@@ -57,6 +57,15 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 class RegistroController extends BaseController
 {
 
+  /** Pattern per la data estesa delle lezioni */
+  private const FORMATO_DATA_LEZIONE = 'EEEE d MMMM yyyy';
+  /** Pattern per la data numerica breve */
+  private const FORMATO_DATA = 'd/m/Y';
+  /** Condizione DQL che identifica la lezione nel giorno */
+  private const DQL_LEZIONE = 'l.data=:data AND l.ora=:ora AND c.anno=:anno AND c.sezione=:sezione';
+  /** Condizione DQL che identifica una lezione dal suo identificativo */
+  private const DQL_LEZIONE_ID = 'f.lezione=:lezione';
+
   /**
    * Gestione del registro delle lezioni
    *
@@ -112,7 +121,7 @@ class RegistroController extends BaseController
     }
     // data in formato stringa
     $formatter = new IntlDateFormatter('it_IT', IntlDateFormatter::SHORT, IntlDateFormatter::SHORT);
-    $formatter->setPattern('EEEE d MMMM yyyy');
+    $formatter->setPattern(self::FORMATO_DATA_LEZIONE);
     $info['data_label'] = $formatter->format($dataObj);
     // data inizio e fine vista
     if ($vista == 'M') {
@@ -195,8 +204,8 @@ class RegistroController extends BaseController
       'cattedra' => $cattedra,
       'classe' => $classe,
       'data' => $dataObj->format('Y-m-d'),
-      'data_inizio' => $data_inizio->format('d/m/Y'),
-      'data_fine' => $data_fine->format('d/m/Y'),
+      'data_inizio' => $data_inizio->format(self::FORMATO_DATA),
+      'data_fine' => $data_fine->format(self::FORMATO_DATA),
       'data_succ' => $data_succ,
       'data_prec' => $data_prec,
       'settimana' => $settimana,
@@ -266,7 +275,7 @@ class RegistroController extends BaseController
     $firmeLezioni = [];
     $lezioni = $this->em->getRepository(Lezione::class)->createQueryBuilder('l')
       ->join('l.classe', 'c')
-      ->where('l.data=:data AND l.ora=:ora AND c.anno=:anno AND c.sezione=:sezione')
+      ->where(self::DQL_LEZIONE)
       ->setParameter('data', $data)
       ->setParameter('ora', $ora)
       ->setParameter('anno', $classe->getAnno())
@@ -279,7 +288,7 @@ class RegistroController extends BaseController
       $gruppo = $lezione->getTipoGruppo().':'.$lezione->getGruppo();
       $firme = $this->em->getRepository(Firma::class)->createQueryBuilder('f')
         ->join('f.docente', 'd')
-        ->where('f.lezione=:lezione')
+        ->where(self::DQL_LEZIONE_ID)
         ->setParameter('lezione', $lezione)
         ->getQuery()
         ->getResult();
@@ -311,7 +320,7 @@ class RegistroController extends BaseController
     }
     // dati in formato stringa
     $formatter = new IntlDateFormatter('it_IT', IntlDateFormatter::SHORT, IntlDateFormatter::SHORT);
-    $formatter->setPattern('EEEE d MMMM yyyy');
+    $formatter->setPattern(self::FORMATO_DATA_LEZIONE);
     $label['data'] = $formatter->format($dataObj);
     $label['docente'] = $this->getUser()->getNome().' '.$this->getUser()->getCognome();
     $label['classe'] = ''.$classe;
@@ -602,7 +611,7 @@ class RegistroController extends BaseController
     $firmeLezioni = [];
     $lezioni = $this->em->getRepository(Lezione::class)->createQueryBuilder('l')
       ->join('l.classe', 'c')
-      ->where('l.data=:data AND l.ora=:ora AND c.anno=:anno AND c.sezione=:sezione')
+      ->where(self::DQL_LEZIONE)
       ->setParameter('data', $data)
       ->setParameter('ora', $ora)
       ->setParameter('anno', $classe->getAnno())
@@ -615,7 +624,7 @@ class RegistroController extends BaseController
       $gruppo = $lezione->getTipoGruppo().':'.$lezione->getGruppo();
       $firme = $this->em->getRepository(Firma::class)->createQueryBuilder('f')
         ->join('f.docente', 'd')
-        ->where('f.lezione=:lezione')
+        ->where(self::DQL_LEZIONE_ID)
         ->setParameter('lezione', $lezione)
         ->getQuery()
         ->getResult();
@@ -643,7 +652,7 @@ class RegistroController extends BaseController
     }
     // dati in formato stringa
     $formatter = new IntlDateFormatter('it_IT', IntlDateFormatter::SHORT, IntlDateFormatter::SHORT);
-    $formatter->setPattern('EEEE d MMMM yyyy');
+    $formatter->setPattern(self::FORMATO_DATA_LEZIONE);
     $label['data'] = $formatter->format($dataObj);
     $label['docente'] = $this->getUser()->getNome().' '.$this->getUser()->getCognome();
     $label['classe'] = ''.$lezioneDocente->getClasse();
@@ -915,7 +924,7 @@ class RegistroController extends BaseController
     $firmeLezioni = [];
     $lezioni = $this->em->getRepository(Lezione::class)->createQueryBuilder('l')
       ->join('l.classe', 'c')
-      ->where('l.data=:data AND l.ora=:ora AND c.anno=:anno AND c.sezione=:sezione')
+      ->where(self::DQL_LEZIONE)
       ->setParameter('data', $data)
       ->setParameter('ora', $ora)
       ->setParameter('anno', $classe->getAnno())
@@ -928,7 +937,7 @@ class RegistroController extends BaseController
       $gruppo = $lezione->getTipoGruppo().':'.$lezione->getGruppo();
       $firme = $this->em->getRepository(Firma::class)->createQueryBuilder('f')
         ->join('f.docente', 'd')
-        ->where('f.lezione=:lezione')
+        ->where(self::DQL_LEZIONE_ID)
         ->setParameter('lezione', $lezione)
         ->getQuery()
         ->getResult();
@@ -956,7 +965,7 @@ class RegistroController extends BaseController
     }
     // dati in formato stringa
     $formatter = new IntlDateFormatter('it_IT', IntlDateFormatter::SHORT, IntlDateFormatter::SHORT);
-    $formatter->setPattern('EEEE d MMMM yyyy');
+    $formatter->setPattern(self::FORMATO_DATA_LEZIONE);
     $label['data'] = $formatter->format($dataObj);
     $label['docente'] = $this->getUser()->getNome().' '.$this->getUser()->getCognome();
     $label['classe'] = ''.$lezioneDocente->getClasse();
@@ -1052,7 +1061,7 @@ class RegistroController extends BaseController
     $firmeLezioni = [];
     $lezioni = $this->em->getRepository(Lezione::class)->createQueryBuilder('l')
       ->join('l.classe', 'c')
-      ->where('l.data=:data AND l.ora=:ora AND c.anno=:anno AND c.sezione=:sezione')
+      ->where(self::DQL_LEZIONE)
       ->setParameter('data', $data)
       ->setParameter('ora', $ora)
       ->setParameter('anno', $classe->getAnno())
@@ -1065,7 +1074,7 @@ class RegistroController extends BaseController
       $gruppo = $lezione->getTipoGruppo().':'.$lezione->getGruppo();
       $firme = $this->em->getRepository(Firma::class)->createQueryBuilder('f')
         ->join('f.docente', 'd')
-        ->where('f.lezione=:lezione')
+        ->where(self::DQL_LEZIONE_ID)
         ->setParameter('lezione', $lezione)
         ->getQuery()
         ->getResult();
@@ -1299,7 +1308,7 @@ class RegistroController extends BaseController
     }
     // dati in formato stringa
     $formatter = new IntlDateFormatter('it_IT', IntlDateFormatter::SHORT, IntlDateFormatter::SHORT);
-    $formatter->setPattern('EEEE d MMMM yyyy');
+    $formatter->setPattern(self::FORMATO_DATA_LEZIONE);
     $label['data'] = $formatter->format($dataObj);
     $label['docente'] = $this->getUser()->getNome().' '.$this->getUser()->getCognome();
     $label['classe'] = ''.$classe;
@@ -1326,7 +1335,7 @@ class RegistroController extends BaseController
       ->add('filtroIndividuale', EntityType::class, ['label' => false,
         'data' => $alunni,
         'class' => Alunno::class,
-        'choice_label' => fn($obj) => $obj->getCognome().' '.$obj->getNome().' ('.$obj->getDataNascita()->format('d/m/Y').')',
+        'choice_label' => fn($obj) => $obj->getCognome().' '.$obj->getNome().' ('.$obj->getDataNascita()->format(self::FORMATO_DATA).')',
         'query_builder' => fn(EntityRepository $er) => $er->createQueryBuilder('a')
           ->where('a.id IN (:lista)')
           ->orderBy('a.cognome,a.nome,a.dataNascita', 'ASC')
@@ -1597,7 +1606,7 @@ class RegistroController extends BaseController
     }
     // dati in formato stringa
     $formatter = new IntlDateFormatter('it_IT', IntlDateFormatter::SHORT, IntlDateFormatter::SHORT);
-    $formatter->setPattern('EEEE d MMMM yyyy');
+    $formatter->setPattern(self::FORMATO_DATA_LEZIONE);
     $label['data'] = $formatter->format($dataObj);
     $label['docente'] = $this->getUser()->getNome().' '.$this->getUser()->getCognome();
     $label['classe'] = ''.$classe;
@@ -1619,7 +1628,7 @@ class RegistroController extends BaseController
           'required' => true])
         ->add('alunni', EntityType::class, ['label' => 'label.alunni',
           'class' => Alunno::class,
-          'choice_label' => fn($obj) => $obj->getCognome().' '.$obj->getNome().' ('.$obj->getDataNascita()->format('d/m/Y').')',
+          'choice_label' => fn($obj) => $obj->getCognome().' '.$obj->getNome().' ('.$obj->getDataNascita()->format(self::FORMATO_DATA).')',
           'query_builder' => fn(EntityRepository $er) => $er->createQueryBuilder('a')
             ->where('a.id IN (:lista)')
             ->orderBy('a.cognome,a.nome,a.dataNascita', 'ASC')
