@@ -16,6 +16,22 @@ if (typeof jQuery === 'undefined') {
   }
 }(jQuery);
 
+/* =
+ * Hardening di sicurezza: i valori derivati dal DOM (es. href/data-target) devono essere
+ * usati esclusivamente come selettori CSS e non devono mai essere reinterpretati da jQuery
+ * come frammenti HTML (vettore DOM-based XSS). Un testo che inizia con "<" viene ignorato.
+ * =
+ */
+function gsSelectorToJQuery(selector) {
+  if (typeof selector !== 'string') {
+    return jQuery(selector)
+  }
+  if (/^\s*</.test(selector)) {
+    return jQuery()
+  }
+  return jQuery(document).find(selector)
+}
+
 /* ========================================================================
  * Bootstrap: transition.js v3.3.7
  * http://getbootstrap.com/javascript/#transitions
@@ -109,7 +125,7 @@ if (typeof jQuery === 'undefined') {
       selector = selector && selector.replace(/.*(?=#[^\s]*$)/, '') // strip for ie7
     }
 
-    var $parent = $(selector === '#' ? [] : selector)
+    var $parent = gsSelectorToJQuery(selector === '#' ? [] : selector)
 
     if (e) e.preventDefault()
 
@@ -507,7 +523,7 @@ if (typeof jQuery === 'undefined') {
   var clickHandler = function (e) {
     var href
     var $this   = $(this)
-    var $target = $($this.attr('data-target') || (href = $this.attr('href')) && href.replace(/.*(?=#[^\s]+$)/, '')) // strip for ie7
+    var $target = gsSelectorToJQuery($this.attr('data-target') || (href = $this.attr('href')) && href.replace(/.*(?=#[^\s]+$)/, '')) // strip for ie7
     if (!$target.hasClass('carousel')) return
     var options = $.extend({}, $target.data(), $this.data())
     var slideIndex = $this.attr('data-slide-to')
@@ -697,7 +713,7 @@ if (typeof jQuery === 'undefined') {
     var target = $trigger.attr('data-target')
       || (href = $trigger.attr('href')) && href.replace(/.*(?=#[^\s]+$)/, '') // strip for ie7
 
-    return $(target)
+    return gsSelectorToJQuery(target)
   }
 
 
@@ -779,7 +795,7 @@ if (typeof jQuery === 'undefined') {
       selector = selector && /#[A-Za-z]/.test(selector) && selector.replace(/.*(?=#[^\s]*$)/, '') // strip for ie7
     }
 
-    var $parent = selector && $(selector)
+    var $parent = selector && gsSelectorToJQuery(selector)
 
     return $parent && $parent.length ? $parent : $this.parent()
   }
@@ -1238,7 +1254,7 @@ if (typeof jQuery === 'undefined') {
   $(document).on('click.bs.modal.data-api', '[data-toggle="modal"]', function (e) {
     var $this   = $(this)
     var href    = $this.attr('href')
-    var $target = $($this.attr('data-target') || (href && href.replace(/.*(?=#[^\s]+$)/, ''))) // strip for ie7
+    var $target = gsSelectorToJQuery($this.attr('data-target') || (href && href.replace(/.*(?=#[^\s]+$)/, ''))) // strip for ie7
     var option  = $target.data('bs.modal') ? 'toggle' : $.extend({ remote: !/#/.test(href) && href }, $target.data(), $this.data())
 
     if ($this.is('a')) e.preventDefault()
@@ -1307,7 +1323,7 @@ if (typeof jQuery === 'undefined') {
     this.type      = type
     this.$element  = $(element)
     this.options   = this.getOptions(options)
-    this.$viewport = this.options.viewport && $($.isFunction(this.options.viewport) ? this.options.viewport.call(this, this.$element) : (this.options.viewport.selector || this.options.viewport))
+    this.$viewport = this.options.viewport && gsSelectorToJQuery($.isFunction(this.options.viewport) ? this.options.viewport.call(this, this.$element) : (this.options.viewport.selector || this.options.viewport))
     this.inState   = { click: false, hover: false, focus: false }
 
     if (this.$element[0] instanceof document.constructor && !this.options.selector) {
@@ -1562,7 +1578,9 @@ if (typeof jQuery === 'undefined') {
     var $tip  = this.tip()
     var title = this.getTitle()
 
-    $tip.find('.tooltip-inner')[this.options.html ? 'html' : 'text'](title)
+    // il titolo puo' derivare dal DOM (attributo title/data-original-title): viene sempre
+    // inserito come testo per non reinterpretarlo come HTML (l'opzione html resta disattivata)
+    $tip.find('.tooltip-inner').text(title)
     $tip.removeClass('fade in top bottom left right')
   }
 
@@ -2231,7 +2249,7 @@ if (typeof jQuery === 'undefined') {
   var Affix = function (element, options) {
     this.options = $.extend({}, Affix.DEFAULTS, options)
 
-    this.$target = $(this.options.target)
+    this.$target = gsSelectorToJQuery(this.options.target)
       .on('scroll.bs.affix.data-api', $.proxy(this.checkPosition, this))
       .on('click.bs.affix.data-api',  $.proxy(this.checkPositionWithEventLoop, this))
 

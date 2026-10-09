@@ -1857,9 +1857,9 @@
 			var fparts = format.parts.slice();
 			// Remove noop parts
 			if (parts.length !== fparts.length){
-				fparts = $(fparts).filter(function(i,p){
+				fparts = fparts.filter(function(p){
 					return $.inArray(p, setters_order) !== -1;
-				}).toArray();
+				});
 			}
 			// Process remainder
 			function match_part(){
