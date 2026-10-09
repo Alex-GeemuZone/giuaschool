@@ -536,7 +536,7 @@
           var cells = [], cols = [], psuedo = [], content;
           for(var x = 0; x < count; x++){
             content = $headerColumns.eq(x).text();
-            cells.push('<th class="floatThead-col" aria-label="'+content+'"/>');
+            cells.push(content);
             cols.push('<col/>');
             psuedo.push(
               $('<fthtd>').css({
@@ -548,7 +548,6 @@
           }
 
           cols = cols.join('');
-          cells = cells.join('');
 
           if(createElements){
             $fthRow.empty();
@@ -556,7 +555,12 @@
             $fthCells = $fthRow.find('fthtd');
           }
 
-          $sizerRow.html(cells);
+          // le celle "sizer" vengono create come elementi e il testo di intestazione e'
+          // impostato come attributo: nessuna reinterpretazione di testo come HTML
+          $sizerRow.empty();
+          for(var y = 0; y < cells.length; y++){
+            $sizerRow.append($('<th class="floatThead-col"/>').attr('aria-label', cells[y]));
+          }
           $sizerCells = $sizerRow.find("th");
           if(!existingColGroup){
             $tableColGroup.html(cols);
