@@ -463,6 +463,7 @@ class CoordinatoreController extends BaseController {
     $info['classe'] = null;
     $info['annoInizio'] = null;
     $info['annoFine'] = null;
+    $info['configErrore'] = false;
     // parametro classe
     $classe = $this->recuperaClasseSessione($classe);
     // recupera criteri dalla sessione
