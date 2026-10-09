@@ -3773,17 +3773,6 @@ fieldset .gs-add-item {
   padding-left: 1.25rem;
 }
 
-/* stato attivo: la scelta già memorizzata resta selezionata e ben evidenziata */
-.gs-selettore-classe--attiva {
-  background: var(--gs-primary-soft);
-  border-color: var(--gs-primary-strong);
-  box-shadow: 0 0 0 1px var(--gs-primary-strong) inset;
-}
-
-.gs-selettore-classe--attiva .gs-selettore-classe-label {
-  color: var(--gs-primary);
-}
-
 @media (max-width: 767.98px) {
   .gs-selettore-classe {
     padding: 0.75rem;

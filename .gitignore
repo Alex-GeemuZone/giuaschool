@@ -68,3 +68,5 @@ client_secret_*.json
 /tools/
 /var/server_dev.log
 ###< artefatti locali di analisi ###
+
+/__pycache__/

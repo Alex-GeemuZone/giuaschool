@@ -210,9 +210,9 @@ class PagelleUtil {
         if ( !isset($ns['deroga']) ) {
           $dati['no_scrutinabili'][] = $alu;
         }
-      }
-      // alunni all'estero
-      $dati['estero'] = $dati['scrutinio']->getDato('estero');
+      }	// alunni all'estero
+      $estero = $dati['scrutinio']->getDato('estero');
+      $dati['estero'] = (is_array($estero) ? $estero : []);
       // dati degli alunni (scrutinati/non scrutinabili/all'estero, sono esclusi i ritirati)
       $alunni = $this->em->getRepository(Alunno::class)->createQueryBuilder('a')
         ->select('a.id,a.nome,a.cognome,a.dataNascita,a.sesso,a.religione,a.bes,a.note,a.frequenzaEstero,a.codiceFiscale')
@@ -1222,10 +1222,9 @@ class PagelleUtil {
         } else {
           $dati['no_scrutinabili'][] = $alu;
         }
-      }
-      // alunni estero
-      $dati['estero'] = ($dati['scrutinio']->getDato('estero') == null ? [] :
-        $dati['scrutinio']->getDato('estero'));
+      }	// alunni estero
+      $estero = $dati['scrutinio']->getDato('estero');
+      $dati['estero'] = (is_array($estero) ? $estero : []);
       // dati degli alunni (scrutinati/cessata frequenza/non scrutinabili/all'estero)
       $alunni = $this->em->getRepository(Alunno::class)->createQueryBuilder('a')
         ->select('a.id,a.nome,a.cognome,a.dataNascita,a.sesso,a.religione,a.bes,a.note,a.frequenzaEstero,a.credito3,a.credito4,a.codiceFiscale')

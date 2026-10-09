@@ -481,9 +481,14 @@ class CoordinatoreController extends BaseController {
     if ($criteri['fine']) {
       $fine = DateTime::createFromFormat('Y-m-d', $criteri['fine']);
     } else {
-      $fine = DateTime::createFromFormat('Y-m-d',
-        $this->reqstack->getSession()->get('/CONFIG/SCUOLA/anno_fine'));
-      $criteri['fine'] = $fine->format('Y-m-d');
+      $annoFine = $this->reqstack->getSession()->get('/CONFIG/SCUOLA/anno_fine');
+      $fine = DateTime::createFromFormat('Y-m-d', $annoFine);
+      if (!$fine) {
+        $fine = null;
+        $info['configErrore'] = true;
+        $this->addFlash('warning', 'config.anno_fine_non_valido');
+      }
+      $criteri['fine'] = $fine ? $fine->format('Y-m-d') : '';
     }
     if ($pagina == 0) {
       // pagina non definita: la cerca in sessione
@@ -500,13 +505,22 @@ class CoordinatoreController extends BaseController {
         throw $this->createNotFoundException('exception.id_notfound');
       }
       $this->controllaAccessoClasse($classe);
-      // form di ricerca
-      $opzioniAlunni = $this->em->getRepository(Alunno::class)->opzioni(true, true,
-        $classe->getId());
-      $form = $this->createForm(FiltroType::class, null, ['form_mode' => 'presenze',
-        'values' => [$alunno, $opzioniAlunni, $inizio, $fine]]);
-      $form->handleRequest($request);
-      if ($form->isSubmitted() && $form->isValid()) {
+      if ($info['configErrore']) {
+        // se la configurazione è non parsabile, non avviamo la ricerca con un range non
+        // vincolato; il messaggio flash avvisa l'utente e la funzionalità non viene
+        // degradata in modo silente per tutti gli utenti con quel dato.
+        $form = null;
+      } else {
+        // form di ricerca
+        $opzioniAlunni = $this->em->getRepository(Alunno::class)->opzioni(true, true,
+          $classe->getId());
+        $form = $this->createForm(FiltroType::class, null, ['form_mode' => 'presenze',
+          'values' => [$alunno, $opzioniAlunni, $inizio, $fine]]);
+      }
+      if ($form) {
+        $form->handleRequest($request);
+      }
+      if ($form && $form->isSubmitted() && $form->isValid()) {
         // imposta criteri di ricerca
         $criteri['alunno'] = (is_object($form->get('alunno')->getData()) ?
           $form->get('alunno')->getData()->getId() : 0);
@@ -518,18 +532,33 @@ class CoordinatoreController extends BaseController {
         $this->reqstack->getSession()->set('/APP/ROUTE/coordinatore_presenze/fine', $criteri['fine']);
         $this->reqstack->getSession()->set('/APP/ROUTE/coordinatore_presenze/pagina', $pagina);
       }
-      // lista fuori classe
-      $dati = $this->em->getRepository(Presenza::class)->fuoriClasse($classe, $criteri, $pagina);
+      // lista fuori classe (solo se la configurazione non è non parsabile)
+      if (!$info['configErrore']) {
+        $dati = $this->em->getRepository(Presenza::class)->fuoriClasse($classe, $criteri, $pagina);
+      }
       // imposta informazioni
       $info['classe'] = $classe;
       $info['pagina'] = $pagina;
       $info['oggi'] = new DateTime('today');
       $dataYMD = $this->reqstack->getSession()->get('/CONFIG/SCUOLA/anno_inizio');
-      $info['annoInizio'] = substr((string) $dataYMD, 8, 2).'/'.substr((string) $dataYMD, 5, 2).'/'.substr((string) $dataYMD, 0, 4);
+      if ($dataYMD && strlen((string) $dataYMD) >= 10) {
+        $info['annoInizio'] = substr((string) $dataYMD, 8, 2).'/'.substr((string) $dataYMD, 5, 2).'/'.substr((string) $dataYMD, 0, 4);
+      } else {
+        $info['annoInizio'] = '-';
+      }
       $dataYMD = $this->reqstack->getSession()->get('/CONFIG/SCUOLA/anno_fine');
-      $info['annoFine'] = substr((string) $dataYMD, 8, 2).'/'.substr((string) $dataYMD, 5, 2).'/'.substr((string) $dataYMD, 0, 4);
+      if ($dataYMD && strlen((string) $dataYMD) >= 10) {
+        $info['annoFine'] = substr((string) $dataYMD, 8, 2).'/'.substr((string) $dataYMD, 5, 2).'/'.substr((string) $dataYMD, 0, 4);
+      } else {
+        $info['annoFine'] = '-';
+      }
     }
     // mostra la pagina di risposta
+    if ($info['configErrore']) {
+      // se l'anno fine non è configurato correttamente, non cerchiamo con un range
+      // artificialmente lontano; il messaggio flash avvisa l'utente.
+      return $this->renderHtml('coordinatore', 'presenze', $dati, $info, []);
+    }
     return $this->renderHtml('coordinatore', 'presenze', $dati, $info, [
       isset($form) ? $form->createView() : null]);
   }
@@ -575,7 +604,11 @@ class CoordinatoreController extends BaseController {
     $this->controllaAccessoClasse($classe);
     // imposta informazioni
     $dataYMD = $this->reqstack->getSession()->get('/CONFIG/SCUOLA/anno_fine');
-    $info['annoFine'] = substr((string) $dataYMD, 8, 2).'/'.substr((string) $dataYMD, 5, 2).'/'.substr((string) $dataYMD, 0, 4);
+    if ($dataYMD && strlen((string) $dataYMD) >= 10) {
+      $info['annoFine'] = substr((string) $dataYMD, 8, 2).'/'.substr((string) $dataYMD, 5, 2).'/'.substr((string) $dataYMD, 0, 4);
+    } else {
+      $info['annoFine'] = '-';
+    }
     // form
     $opzioniAlunni = $this->em->getRepository(Alunno::class)->opzioni(true, true,
       $classe->getId());
@@ -699,7 +732,11 @@ class CoordinatoreController extends BaseController {
     $this->controllaAccessoClasse($classe);
     // imposta informazioni
     $dataYMD = $this->reqstack->getSession()->get('/CONFIG/SCUOLA/anno_fine');
-    $info['annoFine'] = substr((string) $dataYMD, 8, 2).'/'.substr((string) $dataYMD, 5, 2).'/'.substr((string) $dataYMD, 0, 4);
+    if ($dataYMD && strlen((string) $dataYMD) >= 10) {
+      $info['annoFine'] = substr((string) $dataYMD, 8, 2).'/'.substr((string) $dataYMD, 5, 2).'/'.substr((string) $dataYMD, 0, 4);
+    } else {
+      $info['annoFine'] = '-';
+    }
     // form
     $opzioniAlunni = $this->em->getRepository(Alunno::class)->opzioni(true, true,
       $classe->getId());
