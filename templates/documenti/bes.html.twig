@@ -82,10 +82,12 @@
               class="glyphicon glyphicon-plus gs-mr-2"></span><strong>Aggiungi</strong></a>
           {% endif %}
           {% if dati.documenti[i].edit[0] is defined %}
-          <a class="btn btn-warning btn-xs"
-            href="{{ path('documenti_bes_archive', {documento: dati.documenti[i].lista[0].id}) }}" role="button"
-            title="Archivia il documento indicato"><span
-              class="glyphicon glyphicon-time gs-mr-2"></span><strong>Archivia</strong></a>
+          <button class="btn btn-warning btn-xs gs-modal-confirm-button" title="Archivia il documento indicato"
+            data-toggle="modal" data-target="#gs-modal-confirm"
+            data-href="{{ path('documenti_bes_archive', {documento: dati.documenti[i].lista[0].id}) }}"
+            data-text="{{ 'message.archivia_documento_bes'|trans }}"
+            data-csrf="{{ csrf_token('delete') }}"><span class="glyphicon glyphicon-time gs-mr-2"
+              aria-hidden="true"></span><strong>Archivia</strong></button>
           {% endif %}
           {% if dati.documenti[i].delete[0] is defined %}
           <button class="btn btn-danger btn-xs gs-modal-confirm-button" title="Cancella il documento indicato"
@@ -119,10 +121,12 @@
               class="glyphicon glyphicon-plus gs-mr-2"></span><strong>Aggiungi</strong></a>
           {% endif %}
           {% if dati.documenti[i].edit[1] is defined %}
-          <a class="btn btn-warning btn-xs"
-            href="{{ path('documenti_bes_archive', {documento: dati.documenti[i].lista[1].id}) }}" role="button"
-            title="Archivia il documento indicato"><span
-              class="glyphicon glyphicon-time gs-mr-2"></span><strong>Archivia</strong></a>
+          <button class="btn btn-warning btn-xs gs-modal-confirm-button" title="Archivia il documento indicato"
+            data-toggle="modal" data-target="#gs-modal-confirm"
+            data-href="{{ path('documenti_bes_archive', {documento: dati.documenti[i].lista[1].id}) }}"
+            data-text="{{ 'message.archivia_documento_bes'|trans }}"
+            data-csrf="{{ csrf_token('delete') }}"><span class="glyphicon glyphicon-time gs-mr-2"
+              aria-hidden="true"></span><strong>Archivia</strong></button>
           {% endif %}
           {% if dati.documenti[i].delete[1] is defined %}
           <button class="btn btn-danger btn-xs gs-modal-confirm-button" title="Cancella il documento indicato"
@@ -157,10 +161,12 @@
               class="glyphicon glyphicon-plus gs-mr-2"></span><strong>Aggiungi</strong></a>
           {% endif %}
           {% if dati.documenti[i].edit[2] is defined %}
-          <a class="btn btn-warning btn-xs"
-            href="{{ path('documenti_bes_archive', {documento: dati.documenti[i].lista[2].id}) }}" role="button"
-            title="Archivia il documento indicato"><span
-              class="glyphicon glyphicon-time gs-mr-2"></span><strong>Archivia</strong></a>
+          <button class="btn btn-warning btn-xs gs-modal-confirm-button" title="Archivia il documento indicato"
+            data-toggle="modal" data-target="#gs-modal-confirm"
+            data-href="{{ path('documenti_bes_archive', {documento: dati.documenti[i].lista[2].id}) }}"
+            data-text="{{ 'message.archivia_documento_bes'|trans }}"
+            data-csrf="{{ csrf_token('delete') }}"><span class="glyphicon glyphicon-time gs-mr-2"
+              aria-hidden="true"></span><strong>Archivia</strong></button>
           {% endif %}
           {% if dati.documenti[i].delete[2] is defined %}
           <button class="btn btn-danger btn-xs gs-modal-confirm-button" title="Cancella il documento indicato"
