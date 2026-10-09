@@ -44,7 +44,7 @@
     {% set righe = righe|merge([{celle: [
       {contenuto: c.circolare.numero},
       {contenuto: c.circolare.data|date('d/m/Y')},
-      {contenuto: '<small>' ~ c.circolare.titolo ~ '</small>'},
+      {contenuto: '<small>' ~ c.circolare.titolo|e ~ '</small>'},
       {contenuto: pulsanti}
     ]}]) %}
   {% endfor %}

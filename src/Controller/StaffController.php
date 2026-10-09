@@ -996,6 +996,10 @@ class StaffController extends BaseController {
                                  StaffUtil $staff, LogHandler $dblogger, LoggerInterface $logger ,
                                  PdfManager $pdf, MailerInterface $mailer, string $tipo,
                                  string $username = null): Response {
+     // controllo CSRF
+     if (!$this->isCsrfTokenValid('password', $request->query->get('_csrf_token'))) {
+       throw $this->createNotFoundException('exception.invalid_params');
+     }
      // controlla alunno
      $utente = $this->em->getRepository(Alunno::class)->findOneByUsername($username);
      if (!$utente) {
