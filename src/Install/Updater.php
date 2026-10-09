@@ -9,8 +9,11 @@
 namespace App\Install;
 
 require_once __DIR__.'/DataMigrator.php';
+require_once __DIR__.'/../Exception/InstallException.php';
+require_once __DIR__.'/../Exception/InstallAuthException.php';
 
 use App\Exception\InstallException;
+use App\Exception\InstallAuthException;
 use Exception;
 use PDO;
 use Symfony\Component\PasswordHasher\Hasher\PasswordHasherFactory;
@@ -40,6 +43,13 @@ class Updater {
    * @var array $sys Lista delle variabili di sistema
    */
   private array $sys;
+
+  /**
+   * Indica se il token di sicurezza e' stato verificato con successo
+   *
+   * @var bool $authenticated Esito dell'autenticazione della procedura
+   */
+  private bool $authenticated = false;
 
   /**
    * Conserva la connessione al database come istanza PDO
@@ -126,6 +136,15 @@ class Updater {
       $maxStep = count($this->steps['update']);
       $step = ($step < 1) ? 1 : (($step > $maxStep) ? $maxStep : $step);
       $this->{$this->steps['update'][$step]}($step);
+    } catch (InstallAuthException) {
+      // errore di autenticazione: risponde 403 senza generare collegamenti contenenti il token
+      http_response_code(403);
+      $page['version'] = $this->sys['version'] ?? 'INSTALL';
+      $page['step'] = $step.' - Errore';
+      $page['title'] = 'Accesso non autorizzato';
+      $page['danger'] = "Errore di sicurezza nell'invio dei dati.";
+      $page['text'] = 'Verifica di disporre del codice di sicurezza corretto e riprova.';
+      include $this->publicPath.'/install/update_page.php'; //NOSONAR php:S2003 - la pagina va inclusa a ogni passo/errore
     } catch (Exception $e) {
       // visualizza pagina di errore
       $page['version'] = $this->sys['version'].($this->sys['build'] == '0' ? '' : '#build');
@@ -133,8 +152,9 @@ class Updater {
       $page['title'] = 'Si è verificato un errore';
       $page['danger'] = $e->getMessage();
       $page['text'] = "Correggi l'errore e riprova.";
-      $page['error'] = 'update.php?token='.$this->sys['token'].'&step='.
-        ($e->getCode() > 0 ? $e->getCode() : 1);
+      // il collegamento di ripetizione viene generato solo dopo l'autenticazione riuscita
+      $page['error'] = $this->authenticated ? ('update.php?token='.$this->sys['token'].'&step='.
+        ($e->getCode() > 0 ? $e->getCode() : 1)) : null;
       include $this->publicPath.'/install/update_page.php'; //NOSONAR php:S2003 - la pagina va inclusa a ogni passo/errore
     }
   }
@@ -153,6 +173,15 @@ class Updater {
       $maxStep = count($this->steps['install']);
       $step = ($step < 1) ? 1 : (($step > $maxStep) ? $maxStep : $step);
       $this->{$this->steps['install'][$step]}($step);
+    } catch (InstallAuthException) {
+      // errore di autenticazione: risponde 403 senza generare collegamenti contenenti il token
+      http_response_code(403);
+      $page['version'] = 'INSTALL';
+      $page['step'] = $step.' - Errore';
+      $page['title'] = 'Accesso non autorizzato';
+      $page['danger'] = "Errore di sicurezza nell'invio dei dati.";
+      $page['text'] = 'Verifica di disporre del codice di sicurezza corretto e riprova.';
+      include $this->publicPath.'/install/update_page.php'; //NOSONAR php:S2003 - la pagina va inclusa a ogni passo/errore
     } catch (Exception $e) {
       // visualizza pagina di errore
       $page['version'] = 'INSTALL';
@@ -160,8 +189,9 @@ class Updater {
       $page['title'] = 'Si è verificato un errore';
       $page['danger'] = $e->getMessage();
       $page['text'] = "Correggi l'errore e riprova.";
-      $page['error'] = 'app.php?token='.$this->sys['token'].'&step='.
-        ($e->getCode() > 0 ? $e->getCode() : 1);
+      // il collegamento di ripetizione viene generato solo dopo l'autenticazione riuscita
+      $page['error'] = $this->authenticated ? ('app.php?token='.$this->sys['token'].'&step='.
+        ($e->getCode() > 0 ? $e->getCode() : 1)) : null;
       include $this->publicPath.'/install/update_page.php'; //NOSONAR php:S2003 - la pagina va inclusa a ogni passo/errore
     }
   }
@@ -238,8 +268,14 @@ class Updater {
    */
   private function readSys(): void {
     $path = $this->projectPath.'/.gs-updating';
+    if (!file_exists($path)) {
+      // procedura di installazione/aggiornamento non inizializzata
+      $this->sys = [];
+      return;
+    }
     // legge file e carica variabili di ambiente
-    $this->sys = parse_ini_file($path);
+    $dati = parse_ini_file($path);
+    $this->sys = is_array($dati) ? $dati : [];
   }
 
   /**
@@ -273,9 +309,11 @@ class Updater {
     // controlla token
     if (empty($token) || empty($this->sys['token']) ||
       !hash_equals((string) $this->sys['token'], (string) $token)) {
-      // errore di sicurezza
-      throw new InstallException('Errore di sicurezza nell\'invio dei dati', 0);
+      // errore di autenticazione: distinto dagli errori operativi, non deve divulgare il token
+      throw new InstallAuthException('Errore di sicurezza nell\'invio dei dati');
     }
+    // autenticazione riuscita
+    $this->authenticated = true;
     // controlla versione
     $version = $this->getParameter('versione', '0');
     $build = $this->getParameter('versione_build', '0');
@@ -317,9 +355,11 @@ class Updater {
     // controlla token
     if (empty($token) || empty($this->sys['token']) ||
       !hash_equals((string) $this->sys['token'], (string) $token)) {
-      // errore di sicurezza
-      throw new InstallException('Errore di sicurezza nell\'invio dei dati', 0);
+      // errore di autenticazione: distinto dagli errori operativi, non deve divulgare il token
+      throw new InstallAuthException('Errore di sicurezza nell\'invio dei dati');
     }
+    // autenticazione riuscita
+    $this->authenticated = true;
   }
 
   /**
