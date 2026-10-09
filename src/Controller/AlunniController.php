@@ -301,6 +301,10 @@ class AlunniController extends BaseController {
                            PdfManager $pdf, StaffUtil $staff, MailerInterface $mailer,
                            LoggerInterface $logger, LogHandler $dblogger, string $tipo,
                            ?string $username): Response {
+    // controllo CSRF
+    if (!$this->isCsrfTokenValid('password', $request->query->get('_csrf_token'))) {
+      throw $this->createNotFoundException('exception.invalid_params');
+    }
     // controlla alunno
     $utente = $this->em->getRepository(Alunno::class)->findOneByUsername($username);
     if (!$utente) {
@@ -647,9 +651,13 @@ class AlunniController extends BaseController {
    */
   #[Route(path: '/alunni/passwordFiltro/{genitore}', name: 'alunni_passwordFiltro', requirements: ['genitore' => '0|1'], methods: ['GET'])]
   #[IsGranted('ROLE_AMMINISTRATORE')]
-  public function passwordFiltro(UserPasswordHasherInterface $hasher,
+  public function passwordFiltro(Request $request, UserPasswordHasherInterface $hasher,
                                  PdfManager $pdf, StaffUtil $staff, LoggerInterface $logger,
                                  LogHandler $dblogger, int $genitore): Response {
+    // controllo CSRF
+    if (!$this->isCsrfTokenValid('password', $request->query->get('_csrf_token'))) {
+      throw $this->createNotFoundException('exception.invalid_params');
+    }
     // recupera criteri dalla sessione
     $criteri = [];
     $criteri['classe'] = (int) $this->reqstack->getSession()->get('/APP/ROUTE/alunni_modifica/classe');

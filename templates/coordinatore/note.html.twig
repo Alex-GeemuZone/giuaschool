@@ -37,8 +37,8 @@
           {% set righe = righe|merge([{celle: [
             {contenuto: '<strong>' ~ e.data ~ '</strong>'},
             {contenuto: destinatari},
-            {contenuto: '<small>' ~ e.nota|raw|nl2br ~ '<br><em>(' ~ e.nota_doc ~ ')</em></small>'},
-            {contenuto: '<small>' ~ (e.provvedimento|raw|nl2br ? (e.provvedimento ~ '<br><em>(' ~ e.provvedimento_doc ~ ')</em>')|raw) ~ '</small>'}
+            {contenuto: '<small>' ~ e.nota|raw|nl2br ~ '<br><em>(' ~ e.nota_doc|e ~ ')</em></small>'},
+            {contenuto: '<small>' ~ (e.provvedimento|raw|nl2br ? (e.provvedimento ~ '<br><em>(' ~ e.provvedimento_doc|e ~ ')</em>')|raw) ~ '</small>'}
           ]}]) %}
         {% endfor %}
       {% endfor %}
