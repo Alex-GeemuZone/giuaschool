@@ -239,6 +239,10 @@ class AtaController extends BaseController {
                            PdfManager $pdf, StaffUtil $staff, MailerInterface $mailer,
                            LoggerInterface $logger, LogHandler $dblogger, int $id,
                            string $tipo): Response {
+    // controllo CSRF
+    if (!$this->isCsrfTokenValid('password', $request->query->get('_csrf_token'))) {
+      throw $this->createNotFoundException('exception.invalid_params');
+    }
     // controlla ata
     $ata = $this->em->getRepository(Ata::class)->find($id);
     if (!$ata) {
