@@ -101,7 +101,7 @@
         {% else %}
                 <div>
                   <em>La circolare non è stata ancora letta.</em>
-                  <a class="btn btn-xs btn-success pull-right gs-ml-3" href="{{ path('circolari_firma', {circolare: c.circolare.id}) }}" role="button" title="Conferma la lettura della circolare"><strong>Conferma lettura</strong></a>
+                  <a class="btn btn-xs btn-success pull-right gs-ml-3" href="{{ path('circolari_firma', {circolare: c.circolare.id, _csrf_token: csrf_token('circolari_firma')}) }}" role="button" title="Conferma la lettura della circolare"><strong>Conferma lettura</strong></a>
                 </div>
         {% endif %}
       {% else %}

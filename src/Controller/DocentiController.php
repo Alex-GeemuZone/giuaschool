@@ -278,6 +278,10 @@ class DocentiController extends BaseController {
                            PdfManager $pdf, StaffUtil $staff, MailerInterface $mailer,
                            LoggerInterface $logger, LogHandler $dblogger, int $id,
                            string $tipo): Response {
+    // controllo CSRF
+    if (!$this->isCsrfTokenValid('password', $request->query->get('_csrf_token'))) {
+      throw $this->createNotFoundException('exception.invalid_params');
+    }
     // controlla docente
     $docente = $this->em->getRepository(Docente::class)->find($id);
     if (!$docente) {
