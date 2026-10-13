@@ -84,16 +84,23 @@ class ApiController extends BaseController {
     $utente = $this->getUser();
     // legge dati
     $params = json_decode($request->getContent(), true);
+    $device = is_array($params) ? ($params['device'] ?? null) : null;
+    // controlla il payload: deve essere un oggetto JSON con un identificativo dispositivo
+    if (!is_string($device) || $device === '') {
+      // errore: richiesta non valida
+      $logger->error('Registrazione dispositivo non riuscita: parametri non validi.');
+      return new JsonResponse($res, 422); // 422 Unprocessable Entity
+    }
     $userId = $utente->getId();
     // crea token univoco
     $token = bin2hex(random_bytes(32));
     // memorizza token+deviceId
-    $utente->setDispositivo($token.'-'.$params['device']);
+    $utente->setDispositivo($token.'-'.$device);
     $this->em->flush();
     // prepara risposta (token+userId)
     $res['token'] = $token.'-'.$userId;
     // log della registrazione
-    $logger->warning('Registrazione dispositivo', ['device' => $params['device']]);
+    $logger->warning('Registrazione dispositivo', ['device' => $device]);
     // restituisce risposta
     return new JsonResponse($res);
   }
