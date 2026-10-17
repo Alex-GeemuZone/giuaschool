@@ -101,40 +101,6 @@ class ApiController extends BaseController {
   }
 
   /**
-   * Associa l'app di un dispositivo con l'utente corrente.
-   *
-   * @param Request $request Pagina richiesta
-   * @param LoggerInterface $logger Gestore dei log su file
-   *
-   * @return JsonResponse Restituisce il token univoco per l'utente
-   */
-  #[Route(path: '/app/device', name: 'app_device', methods: ['POST'])]
-  #[IsGranted('ROLE_UTENTE')]
-  //@TODO: DA RIMUOVERE
-  public function device(Request $request, LoggerInterface $logger): JsonResponse {
-    // inizializza
-    $res = [];
-    /**
-     * @var Utente Utente connesso
-     */
-    $utente = $this->getUser();
-    // legge dati
-    $params = json_decode($request->getContent(), true);
-    $userId = $utente->getId();
-    // crea token univoco
-    $token = bin2hex(openssl_random_pseudo_bytes(32));
-    // memorizza token+deviceId
-    $utente->setDispositivo($token.'-'.$params['device']);
-    $this->em->flush();
-    // prepara risposta (token+userId)
-    $res['token'] = $token.'-'.$userId;
-    // log della registrazione
-    $logger->warning('Registrazione dispositivo', ['device' => $params['device']]);
-    // restituisce risposta
-    return new JsonResponse($res);
-  }
-
-  /**
    * API: restituisce informazioni sull'utente docente
    *
    * @param Request $request Pagina richiesta
