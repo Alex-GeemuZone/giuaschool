@@ -111,8 +111,14 @@ class FormAuthenticator extends AbstractAuthenticator {
   public function authenticate(Request $request): Passport {
     // legge le credenziali
     $username = $request->request->get('_username');
+    $password = $request->request->get('_password');
+    // richiesta malformata (_username o _password mancanti o non validi): autenticazione
+    // fallita, per evitare il TypeError (HTTP 500) su valori nulli
+    if (!is_string($username) || !is_string($password)) {
+      throw new CustomUserMessageAuthenticationException('exception.invalid_credentials');
+    }
     $credentials = [
-      'password' => $request->request->get('_password'),
+      'password' => $password,
       'otp' => $request->request->get('_otp'),
       'login_speciale' => ($request->attributes->get('_route') === 'login_utente'),
       'ip' => $request->getClientIp()];
@@ -130,7 +136,7 @@ class FormAuthenticator extends AbstractAuthenticator {
    * Restituisce l'utente corrispondente all'identificatore fornito
    *
    * @param string $username Identificatore dell'utente
-   * @param array $attributes Informazioni aggiuntive per la ricerca dell'utente
+   * @param array $attributes Informazioni aggiuntive per l'autenticazione
    *
    * @return UserInterface|null L'utente trovato o null se errore
    *
@@ -150,10 +156,6 @@ class FormAuthenticator extends AbstractAuthenticator {
       throw new CustomUserMessageAuthenticationException('exception.invalid_user');
     }
     // restituisce profilo attivo
-    if ($attributes['login_speciale']) {
-      // login speciale: non controlla profili
-      return $user;
-    }
     return $this->controllaProfili($user);
   }
 
@@ -192,7 +194,13 @@ class FormAuthenticator extends AbstractAuthenticator {
     // controlla password
     if ($this->hasher->isPasswordValid($user, $credentials['password'])) {
       // password ok: se previsto, controlla anche l'OTP
-      $this->controllaOtp($user, $credentials, $loginSpeciale);
+      try {
+        $this->controllaOtp($user, $credentials, $loginSpeciale);
+      } catch (CustomUserMessageAuthenticationException $e) {
+        // protezione brute-force: anche un OTP errato conta come tentativo fallito
+        $this->registraTentativoFallito($throttleKey, $failCount);
+        throw $e;
+      }
       // validazione corretta
       return true;
     }
@@ -202,15 +210,28 @@ class FormAuthenticator extends AbstractAuthenticator {
       'ruolo' => $user->getCodiceRuolo(),
       'login_speciale' => $loginSpeciale,
       'ip' => $credentials['ip']]);
-    // protezione brute-force: massimo N tentativi falliti ogni 15 minuti per utente+IP
+    // protezione brute-force: anche la password errata conta come tentativo fallito
+    $this->registraTentativoFallito($throttleKey, $failCount);
+    // stesso messaggio generico sia per credenziali errate che per blocco temporaneo
+    throw new CustomUserMessageAuthenticationException('exception.invalid_credentials');
+  }
+
+  /**
+   * Registra un tentativo di login fallito per la protezione brute-force.
+   * Il blocco temporaneo scatta al superamento di MAX_TENTATIVI_LOGIN tentativi falliti
+   * nella finestra temporale di BLOCCO_LOGIN_SECONDI, per utente+IP.
+   *
+   * @param string $throttleKey Chiave di cache del contatore dei tentativi falliti
+   * @param int $failCount Numero di tentativi falliti già registrati
+   */
+  private function registraTentativoFallito(string $throttleKey, int $failCount): void {
+    // incrementa il contatore e lo salva in cache con la scadenza temporale
     $failCount++;
     $this->throttleCache->delete($throttleKey);
     $this->throttleCache->get($throttleKey, function (ItemInterface $item) use ($failCount) {
       $item->expiresAfter(self::BLOCCO_LOGIN_SECONDI);
       return $failCount;
     });
-    // stesso messaggio generico sia per credenziali errate che per blocco temporaneo
-    throw new CustomUserMessageAuthenticationException('exception.invalid_credentials');
   }
 
   /**
@@ -228,7 +249,10 @@ class FormAuthenticator extends AbstractAuthenticator {
    */
   private function controllaTipoAccesso(mixed $spid, mixed $idProvider, mixed $idProviderTipo, mixed $loginSpeciale, UserInterface $user, mixed $credentials): void {
     // se SPID/CIE è obbligatorio e non è stato effettuato il login speciale
-    if ($spid == 'obbligatorio' && !$loginSpeciale) {
+    if (!$loginSpeciale && (
+        $spid == 'O' ||
+        (in_array($spid, ['A', 'M']) && !$user->controllaRuolo('A')) ||
+        ($spid == 'M' && $user->controllaRuoloFunzione('AM')))) {
       // errore: utente deve usare accesso SPID/CIE
       $this->logger->error('Tipo di accesso non valido per l\'autenticazione tramite form.', [
         'username' => $user->getUserIdentifier(),

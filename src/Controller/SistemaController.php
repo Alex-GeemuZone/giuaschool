@@ -1511,6 +1511,7 @@ class SistemaController extends BaseController {
     // controllo CSRF (il passo 0 effettua solo controlli, gli altri modificano il sistema)
     if ($step > 0 && (!$request->isMethod('POST') ||
         !$this->isCsrfTokenValid('sistema_aggiorna', $request->request->get('_csrf_token')))) {
+        !$this->isCsrfTokenValid('sistema_aggiorna', $request->request->get('_csrf_token')))) {
       throw $this->createNotFoundException('exception.invalid_params');
     }
     // inizializza
@@ -1902,8 +1903,8 @@ class SistemaController extends BaseController {
       $abilitato = $form->get('abilitato')->getData();
       $client = $form->get('client')->getData();
       $secret = $form->get('secret')->getData();
-      // controlli
-      if ($abilitato != 'no' && (empty($client) || empty($secret))) {
+      if ($abilitato != 'N' && (empty($client) || empty($secret))) {
+        // errore
         // errore        $form->addError(new FormError($trans->trans('exception.spid_no_client_secret')));
         $form->addError(new FormError($trans->trans('exception.spid_no_client_secret')));
       }
