@@ -214,6 +214,10 @@ class AlunniController extends BaseController {
   #[Route(path: '/alunni/modifica/edit/{id}', name: 'alunni_modifica_edit', requirements: ['id' => '\d+'], defaults: ['id' => '0'], methods: ['GET', 'POST'])]
   #[IsGranted('ROLE_AMMINISTRATORE')]
   public function modificaEdit(Request $request, int $id): Response {
+    // le nuove entità (profilo e genitori mancanti) entrano nella sessione di lavoro
+    // solo quando la richiesta è un salvataggio: la sola lettura della pagina non
+    // deve creare dati (evita scritture indesiderate su richieste GET).
+    $salvataggio = $request->isMethod('POST');
     // controlla azione
     if ($id > 0) {
       // azione edit
@@ -225,21 +229,45 @@ class AlunniController extends BaseController {
       $classe_old = $alunno->getClasse() ? $alunno->getClasse()->getId() : null;
       $alunno_old = ['cognome' => $alunno->getCognome(), 'nome' => $alunno->getNome(),
         'sesso' => $alunno->getSesso()];
-      // legge genitori nell'ordine corretto
+      // legge genitori nell'ordine corretto (ne crea di nuovi se mancanti)
       $username = substr((string) $alunno->getUsername(), 0, -2).'f'.substr((string) $alunno->getUsername(), -1);
-      if ($alunno->getGenitori()[0]->getUsername() == $username) {
-        $genitore1 = $alunno->getGenitori()[0];
-        $genitore2 = $alunno->getGenitori()[1] ?? null;
-      } else {
-        $genitore1 = $alunno->getGenitori()[1];
-        $genitore2 = $alunno->getGenitori()[0];
+      $genitori = $alunno->getGenitori()->toArray();
+      if (count($genitori) > 1 && $genitori[0]->getUsername() != $username) {
+        // inverte l'ordine
+        $genitori = array_reverse($genitori);
+      }
+      $genitore1 = $genitori[0] ?? null;
+      $genitore2 = $genitori[1] ?? null;
+      if (!$genitore1) {
+        // genitore mancante: crea il profilo da compilare
+        $genitore1 = (new Genitore())
+          ->setAbilitato(true)
+          ->setAlunno($alunno)
+          ->setSesso('M')
+          ->setPassword('NOPASSWORD');
+        if ($salvataggio) {
+          $this->em->persist($genitore1);
+        }
+      }
+      if (!$genitore2) {
+        // genitore mancante: crea il profilo da compilare
+        $genitore2 = (new Genitore())
+          ->setAbilitato(true)
+          ->setAlunno($alunno)
+          ->setSesso($genitore1->getSesso() == 'M' ? 'F' : 'M')
+          ->setPassword('NOPASSWORD');
+        if ($salvataggio) {
+          $this->em->persist($genitore2);
+        }
       }
     } else {
       // azione add
       $alunno = (new Alunno())
         ->setAbilitato(true)
         ->setPassword('NOPASSWORD');
-      $this->em->persist($alunno);
+      if ($salvataggio) {
+        $this->em->persist($alunno);
+      }
       $classe_old = null;
       $alunno_old = [];
       // aggiunge genitori
@@ -248,13 +276,17 @@ class AlunniController extends BaseController {
         ->setAlunno($alunno)
         ->setSesso('M')
         ->setPassword('NOPASSWORD');
-      $this->em->persist($genitore1);
+      if ($salvataggio) {
+        $this->em->persist($genitore1);
+      }
       $genitore2 = (new Genitore())
         ->setAbilitato(true)
         ->setAlunno($alunno)
         ->setSesso('F')
         ->setPassword('NOPASSWORD');
-      $this->em->persist($genitore2);
+      if ($salvataggio) {
+        $this->em->persist($genitore2);
+      }
     }
     // form
     $opzioniClassi = $this->em->getRepository(Classe::class)->opzioni(null, false);
@@ -833,14 +865,19 @@ class AlunniController extends BaseController {
           // modifica
           $utente = $form->get('utente')->getData();
         }
-        // imposta tipo rappresentante
-        $utente->setRappresentante($nuoviTipi);
-        // memorizza dati
-        $this->em->flush();
-        // messaggio
-        $this->addFlash('success', 'message.update_ok');
-        // redirect
-        return $this->redirectToRoute('alunni_rappresentanti'.($ruolo == 'G' ? 'Genitori' : ''));
+        if (!$utente) {
+          // utente selezionato non valido: errore di compilazione e non di sistema
+          $form->addError(new FormError($trans->trans('exception.invalid_user')));
+        } else {
+          // imposta tipo rappresentante
+          $utente->setRappresentante($nuoviTipi);
+          // memorizza dati
+          $this->em->flush();
+          // messaggio
+          $this->addFlash('success', 'message.update_ok');
+          // redirect
+          return $this->redirectToRoute('alunni_rappresentanti'.($ruolo == 'G' ? 'Genitori' : ''));
+        }
       }
     }
     // mostra la pagina di risposta
@@ -888,6 +925,10 @@ class AlunniController extends BaseController {
    * @param mixed $genitore Genitore di cui impostare i numeri di telefono
    */
   private function impostaNumeriTelefono(mixed $genitore): void {
+    if (!$genitore) {
+      // genitore non presente: niente da fare
+      return;
+    }
     $telefono = [];
     foreach ($genitore->getNumeriTelefono() as $tel) {
       $tel = preg_replace('/[^+\d]/', '', (string) $tel);

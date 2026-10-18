@@ -294,6 +294,8 @@ class OsservazioniController extends BaseController {
     $mesi = ['', 'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
     $info = null;
     $dati = null;
+    $data_succ = null;
+    $data_prec = null;
     // parametri cattedra/classe
     $parametri = $this->recuperaParametriSessione($cattedra, $classe);
     $cattedra = $parametri['cattedra'];

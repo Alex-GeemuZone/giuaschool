@@ -103,7 +103,10 @@ class ScuolaController extends BaseController {
         ->setPeriodo($periodo)
         ->setArgomenti($argomenti)
         ->setStruttura($struttura);
-      $this->em->persist($definizione);
+      if ($request->isMethod('POST')) {
+        // memorizza solo al salvataggio: la lettura della pagina non crea dati
+        $this->em->persist($definizione);
+      }
     }
     // normalizza le date di pubblicazione esiti: la colonna e' di tipo ARRAY e
     // puo' contenere stringhe (dati caricati da fixture o da versioni

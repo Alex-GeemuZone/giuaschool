@@ -213,7 +213,8 @@ class VotiController extends BaseController {
       $this->reqstack->getSession()->set('/APP/ROUTE/lezioni_voti_classe/conferma', 0);
     }
     // controllo cattedra
-    $cattedra = $this->em->getRepository(Cattedra::class)->find($cattedra);
+    $cattedra = $this->em->getRepository(Cattedra::class)->findOneBy(['id' => $cattedra,
+      'docente' => $this->getUser(), 'attiva' => 1]);
     if (!$cattedra) {
       // errore
       throw $this->createNotFoundException('exception.id_notfound');
@@ -421,7 +422,8 @@ class VotiController extends BaseController {
       $this->reqstack->getSession()->set('/APP/ROUTE/lezioni_voti_alunno/conferma', 0);
     }
     // controllo cattedra
-    $cattedra = $this->em->getRepository(Cattedra::class)->find($cattedra);
+    $cattedra = $this->em->getRepository(Cattedra::class)->findOneBy(['id' => $cattedra,
+      'docente' => $this->getUser(), 'attiva' => 1]);
     if (!$cattedra) {
       // errore
       throw $this->createNotFoundException('exception.id_notfound');
@@ -620,6 +622,7 @@ class VotiController extends BaseController {
     // inizializza variabili
     $info = null;
     $dati = null;
+    $alunni = [];
     // parametri cattedra/classe
     if ($cattedra == 0 && $classe == 0) {
       // recupera parametri da sessione
