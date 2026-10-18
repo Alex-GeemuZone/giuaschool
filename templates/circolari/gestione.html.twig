@@ -16,7 +16,7 @@
     {contenuto: 'label.numero'|trans, classi: 'col-sm-1', scope: 'col'},
     {contenuto: 'label.sede'|trans, classi: 'col-sm-2', scope: 'col'},
     {contenuto: 'label.oggetto'|trans, classi: 'col-sm-6', scope: 'col'},
-    {contenuto: 'label.action'|trans, classi: 'col-sm-2', scope: 'col'}
+    {contenuto: 'label.action'|trans, classi: 'col-sm-2', scope: 'col'},
   ] %}
   {% set righe = [] %}
   {% for k, c in dati.bozza %}
@@ -50,14 +50,14 @@
       {contenuto: c.numero},
       {contenuto: '<small>' ~ c.sedi|map(s => s.citta|upper|e)|join(', ') ~ '</small>'},
       {contenuto: '<small>' ~ c.titolo|e ~ '</small>'},
-      {contenuto: pulsanti}
+      {contenuto: pulsanti},
     ]}]) %}
   {% endfor %}
   {{ include('include/tabella.html.twig', {
     didascalia: 'Circolari in stato di bozza',
     classi_didascalia: 'text-center text-warning gs-pb-0',
     intestazione: [intestazione], corpo: righe,
-    classe_intestazione: 'bg-warning'
+    classe_intestazione: 'bg-warning',
   }) }}
   <div class="row gs-mt-2">
     <div class="col-sm-offset-6 col-sm-6 text-right">
@@ -102,7 +102,7 @@
     {contenuto: 'label.numero'|trans, classi: 'col-sm-1', scope: 'col'},
     {contenuto: 'label.sede'|trans, classi: 'col-sm-2', scope: 'col'},
     {contenuto: 'label.oggetto'|trans, classi: 'col-sm-6', scope: 'col'},
-    {contenuto: 'label.action'|trans, classi: 'col-sm-2', scope: 'col'}
+    {contenuto: 'label.action'|trans, classi: 'col-sm-2', scope: 'col'},
   ] %}
   {% set righe = [] %}
   {% for k, c in dati.pubblicate.lista %}
@@ -123,7 +123,7 @@
       {contenuto: c.numero},
       {contenuto: '<small>' ~ c.sedi|map(s => s.nomeBreve|upper|e)|join(', ') ~ '</small>'},
       {contenuto: '<small>' ~ c.titolo|e ~ '</small>'},
-      {contenuto: pulsanti}
+      {contenuto: pulsanti},
     ]}]) %}
   {% endfor %}
   {{ include('include/tabella.html.twig', {intestazione: [intestazione], corpo: righe}) }}

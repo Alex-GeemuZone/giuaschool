@@ -4,14 +4,14 @@
 <div class="container-fluid">
   {% if not classe %}
   {# selettore sede/classe #}
-  {{ include('include/selettore-classe.html.twig', {classi: gs_classi_coordinatore(), azione: 'coordinatore_seleziona', attiva: classe.id|default(0), gruppo: false}, with_context = false) }}
+  {{ include('include/selettore-classe.html.twig', {classi: gs_classi_coordinatore(), azione: 'coordinatore_seleziona', attiva: classe.id|default(0), gruppo: false}, with_context: false) }}
   {% else %}
   <h1 class="text-center gs-h1 gs-mt-2 gs-mb-3">{{ 'title.coordinatore_situazione'|trans }} {{ classe }}</h1>
   {# selettore sede/classe #}
-  {{ include('include/selettore-classe.html.twig', {classi: gs_classi_coordinatore(), azione: 'coordinatore_seleziona', attiva: classe.id, gruppo: false}, with_context = false) }}
+  {{ include('include/selettore-classe.html.twig', {classi: gs_classi_coordinatore(), azione: 'coordinatore_seleziona', attiva: classe.id, gruppo: false}, with_context: false) }}
   {% set intestazione = [
       {contenuto: 'Alunno', classi: 'col-sm-6', scope: 'col'},
-      {contenuto: 'Azioni', classi: 'col-sm-6', scope: 'col'}
+      {contenuto: 'Azioni', classi: 'col-sm-6', scope: 'col'},
     ] %}
     {% set corpo_grezzo_0 %}
     {% for alunno, a in dati.alunni %}
@@ -43,7 +43,7 @@
   {% set intestazione = [
       {contenuto: 'Alunno', classi: 'col-sm-3', scope: 'col'},
       {contenuto: 'Situazione', classi: 'col-sm-3', scope: 'col'},
-      {contenuto: 'Azioni', classi: 'col-sm-6', scope: 'col'}
+      {contenuto: 'Azioni', classi: 'col-sm-6', scope: 'col'},
     ] %}
     {% set corpo_grezzo_1 %}
       {% for alunno, a in dati.trasferiti %}
