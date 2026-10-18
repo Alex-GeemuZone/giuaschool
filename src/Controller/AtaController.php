@@ -233,14 +233,14 @@ class AtaController extends BaseController {
    * @return Response Pagina di risposta
    *
    */
-  #[Route(path: '/ata/password/{id}/{tipo}', name: 'ata_password', requirements: ['id' => '\d+', 'tipo' => 'E|P'], methods: ['GET'])]
+  #[Route(path: '/ata/password/{id}/{tipo}', name: 'ata_password', requirements: ['id' => '\d+', 'tipo' => 'E|P'], methods: ['POST'])]
   #[IsGranted('ROLE_AMMINISTRATORE')]
   public function password(Request $request, UserPasswordHasherInterface $hasher,
                            PdfManager $pdf, StaffUtil $staff, MailerInterface $mailer,
                            LoggerInterface $logger, LogHandler $dblogger, int $id,
                            string $tipo): Response {
     // controllo CSRF
-    if (!$this->isCsrfTokenValid('password', $request->query->get('_csrf_token'))) {
+    if (!$this->isCsrfTokenValid('password', $request->request->get('_csrf_token'))) {
       throw $this->createNotFoundException('exception.invalid_params');
     }
     // controlla ata

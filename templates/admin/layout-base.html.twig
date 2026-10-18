@@ -70,6 +70,8 @@
                   title="{{ app.session.get('/CONFIG/MENU/help').descrizione }}">
                   <span class="font-weight-bold">{{ app.session.get('/CONFIG/MENU/help').nome }}</span>
                   {{ include('admin/include/icona.html.twig', {nome: 'caret-down', classe: 'icon-xs d-none d-xl-block ml-0'}) }}
+                </a>
+                <div class="dropdown-menu">
                   <div class="row">
                     <div class="col-12">
                       <div class="link-list-wrapper">
@@ -92,7 +94,9 @@
                   <span class="rounded-icon">
                     {{ include('admin/include/icona.html.twig', {nome: 'user', classe: 'icon-xs icon-secondary'}) }}
                   </span>
-                    {{ include('admin/include/icona.html.twig', {nome: 'user', classe: 'icon-xs icon-secondary'}) }}
+                  <span class="d-none d-lg-block">{% if is_granted('ROLE_GENITORE') %}{{ app.user.alunno.nome }} {{
+                    app.user.alunno.cognome }}{% else %}{{ app.user.nome }} {{ app.user.cognome }}{% endif %} <small>({{
+                      ('label.' ~ app.user.roles[0])|trans }})</small></span>
                 </a>
                 {% if is_granted('IS_IMPERSONATOR') %}
                 <a class="btn btn-default btn-icon rounded-0" href="{{ path('sistema_alias_exit') }}"
@@ -143,11 +147,14 @@
     </a>
   {## # FINE link TornaSu # ##}
   {## # caricamento javascript # ##}
-      {{ include('admin/include/icona.html.twig', {nome: 'arrow-big-up', classe: 'icon-light'}) }}
+  <script>window.__PUBLIC_PATH__ = "{{ asset('vendor/bootstrap-italia/fonts') }}"</script>
+  <script src="{{ asset('vendor/bootstrap-italia/js/bootstrap-italia.bundle.min.js') }}"></script>
+  <script src="{{ asset('js/main.js?v=' ~ (filedate('js/main.js')|date('U'))) }}"></script>
   <script src="{{ asset('js/notifiche.js?v=' ~ (filedate('js/notifiche.js')|date('U'))) }}"></script>
+  {{ include('include/post-azione.html.twig') }}
   {% block pagina_js_fine %}
   {% endblock %}
   {## # FINE caricamento javascript # ##}
 </body>
 
-</html></html>
+</html>

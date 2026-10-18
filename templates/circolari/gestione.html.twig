@@ -34,7 +34,8 @@
     {% if dati.azioni['unpublish-' ~ k].publish is defined %}
       {% set pulsanti = pulsanti|merge([include('include/bottone-azione.html.twig', {
         nome: 'book', etichetta: 'Pubblica', titolo: 'Pubblica la circolare indicata', stile: 'success',
-        url: path('circolari_publish', {circolare: c.id, pubblica: 1, _csrf_token: csrf_token('circolari_publish')})})]) %}
+        classi: 'gs-post', attributi: {'data-csrf': csrf_token('circolari_publish')},
+        url: path('circolari_publish', {circolare: c.id, pubblica: 1})})]) %}
     {% endif %}
     {% if dati.azioni['unpublish-' ~ k].delete is defined %}
       {% set pulsanti = pulsanti|merge([include('include/bottone-azione.html.twig', {
@@ -116,7 +117,8 @@
       {% set pulsanti = pulsanti|merge([include('include/bottone-azione.html.twig', {
         nome: 'square-x', etichetta: 'Annulla pubblicazione',
         titolo: 'Rimuove la pubblicazione della circolare indicata', stile: 'warning',
-        url: path('circolari_publish', {circolare: c.id, pubblica: 0, _csrf_token: csrf_token('circolari_publish')})})]) %}
+        classi: 'gs-post', attributi: {'data-csrf': csrf_token('circolari_publish')},
+        url: path('circolari_publish', {circolare: c.id, pubblica: 0})})]) %}
     {% endif %}
     {% set righe = righe|merge([{celle: [
       {contenuto: c.data|date('d/m/Y')},
