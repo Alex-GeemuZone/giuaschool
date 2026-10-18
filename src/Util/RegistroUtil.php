@@ -1938,12 +1938,6 @@ class RegistroUtil {
             ->prepare('INSERT INTO gs_assenza_lezione (creato,modificato,alunno_id,lezione_id,ore) VALUES (NOW(),NOW(),:alunno,:lezione,:durata)')
             ->executeStatement(['lezione' => $lezione->getId(), 'alunno' => $alu['id_alunno'],
               'durata' => $oreassenza]);
-            // $stmt = $this->em->getConnection()
-            //   ->prepare('INSERT INTO gs_assenza_lezione (creato,modificato,alunno_id,lezione_id,ore) VALUES (NOW(),NOW(),:alunno,:lezione,:durata)');
-            // $stmt->bindValue('lezione', $lezione->getId(), ParameterType::INTEGER);
-            // $stmt->bindValue('alunno', $alu['id_alunno'], ParameterType::INTEGER);
-            // $stmt->bindValue('durata', $ora['durata'], ParameterType::INTEGER);
-            // $stmt->executeStatement();
         }
       }
     }
