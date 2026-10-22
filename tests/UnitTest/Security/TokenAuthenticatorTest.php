@@ -8,6 +8,7 @@
 
 namespace App\Tests\UnitTest\Security;
 
+use Symfony\Component\HttpFoundation\Response;
 use App\Security\TokenAuthenticator;
 use App\Tests\DatabaseTestCase;
 use App\Util\LogHandler;
@@ -309,8 +310,8 @@ class TokenAuthenticatorTest extends DatabaseTestCase {
     $this->assertSame(['Login', ['Login' => 'Token', 'Username' => $utente->getUsername(), 'Ruolo' => 'ROLE_GENITORE']], $this->dbLogs['ACCESSO'][0]);
     $this->assertSame($data, $utente->getUltimoAccesso());
     $this->assertSame('application/json', $res->headers->get('content-type'));
-    $this->assertSame(200, $res->getStatusCode());
-    $this->assertSame(true, json_decode($res->getContent())->success);
+    $this->assertSame(Response::HTTP_OK, $res->getStatusCode());
+    $this->assertTrue(json_decode($res->getContent())->success);
     $this->assertNotNull(json_decode($res->getContent())->otp);
   }
 
@@ -331,8 +332,8 @@ class TokenAuthenticatorTest extends DatabaseTestCase {
     $this->assertCount(0, $this->logs);
     $this->assertCount(0, $this->dbLogs);
     $this->assertSame('application/json', $res->headers->get('content-type'));
-    $this->assertSame(200, $res->getStatusCode());
-    $this->assertSame(false, json_decode($res->getContent())->success);
+    $this->assertSame(Response::HTTP_OK, $res->getStatusCode());
+    $this->assertFalse(json_decode($res->getContent())->success);
     $this->assertSame('Test', json_decode($res->getContent())->error);
   }
 
