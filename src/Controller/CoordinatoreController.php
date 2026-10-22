@@ -8,6 +8,7 @@
 
 namespace App\Controller;
 
+use Exception;
 use App\Entity\Alunno;
 use App\Entity\CambioClasse;
 use App\Entity\Classe;
@@ -113,7 +114,7 @@ class CoordinatoreController extends BaseController {
             !in_array($k, ['classe', 'alunno', 'cattedra']), ARRAY_FILTER_USE_KEY);
           return $this->redirectToRoute($match['_route'], $param);
         }
-      } catch (\Exception) {
+      } catch (Exception) {
         // rotta non riconosciuta: ricarica comunque la pagina di provenienza
         return $this->redirect($referer);
       }
@@ -875,7 +876,6 @@ class CoordinatoreController extends BaseController {
   /**
    * Controllo moduli formativi svolti: situazione degli alunni
    *
-   * @param Request $request Pagina richiesta
    * @param int $classe Identificativo della classe
    *
    * @return Response Pagina di risposta

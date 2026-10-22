@@ -987,7 +987,6 @@ class VotiController extends BaseController {
    *
    * @param RegistroUtil $reg Funzioni di utilità per il registro
    * @param StaffUtil $staff Funzioni di utilità per il personale
-   * @param int $classe Identificativo della classe
    * @param int $periodo Periodo relativo allo scrutinio
    *
    * @return Response Pagina di risposta

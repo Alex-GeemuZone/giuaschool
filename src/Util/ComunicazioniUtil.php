@@ -8,6 +8,7 @@
 
 namespace App\Util;
 
+use finfo;
 use App\Entity\Allegato;
 use App\Entity\Annotazione;
 use App\Entity\Alunno;
@@ -122,7 +123,7 @@ class ComunicazioniUtil {
       return false;
     }
     if (class_exists('finfo')) {
-      $finfo = new \finfo(FILEINFO_MIME_TYPE);
+      $finfo = new finfo(FILEINFO_MIME_TYPE);
       return ((string) $finfo->file($percorso)) === 'application/pdf';
     }
     return ((string) @mime_content_type($percorso)) === 'application/pdf';
@@ -139,11 +140,11 @@ class ComunicazioniUtil {
     $testo = mb_strtoupper($nome, 'UTF-8');
     $testo = str_replace(['À', 'È', 'É', 'Ì', 'Ò', 'Ù'], ['A', 'E', 'E', 'I', 'O', 'U'], $testo);
     $testo = preg_replace('/\W+/','-', $testo);
-    if (str_starts_with($testo, '-')) {
-      $testo = substr($testo, 1);
+    if (str_starts_with((string) $testo, '-')) {
+      $testo = substr((string) $testo, 1);
     }
-    if (str_ends_with($testo, '-')) {
-      $testo = substr($testo, 0, -1);
+    if (str_ends_with((string) $testo, '-')) {
+      $testo = substr((string) $testo, 0, -1);
     }
     return $testo;
   }
@@ -240,7 +241,7 @@ class ComunicazioniUtil {
     // speciali
     $utenti = $this->utentiSpeciali($comunicazione, $utenti);
     // ATA
-    $ata = array_intersect(['A', 'T', 'C'], str_split($comunicazione->getAta()));
+    $ata = array_intersect(['A', 'T', 'C'], str_split((string) $comunicazione->getAta()));
     if (!empty($ata)) {
       // aggiunge ATA
       $utenti = array_merge($utenti, $this->em->getRepository(Ata::class)->getIdCategorieAta($ata, $sedi));
@@ -1235,7 +1236,7 @@ class ComunicazioniUtil {
       }
       if ($this->azioneDocumento('edit', $docente, $documento)) {
         // controlla se esiste l'alunno
-        $codiceFiscale = trim(substr($documento->getTitolo(), strpos($documento->getTitolo(), '- C.F. ') + 7));
+        $codiceFiscale = trim(substr((string) $documento->getTitolo(), strpos((string) $documento->getTitolo(), '- C.F. ') + 7));
         $alunno = $this->em->getRepository(Alunno::class)->findOneBy(['codiceFiscale' => $codiceFiscale,
           'abilitato' => 1]);
         if ($alunno && $alunno->getClasse() && ($docente->getResponsabileBesSede() === null ||
@@ -1290,7 +1291,7 @@ class ComunicazioniUtil {
     $errore = $this->validaComunicazione($circolare, $docente);
     if ($errore > 0) {
       // restituisce messaggio di errore
-      return $messaggi[$errore];
+      return $messaggi[$errore] ?? null;
     }
     // controllo numero
     if (!$this->em->getRepository(circolare::class)->controllaNumero($circolare)) {
@@ -1346,7 +1347,7 @@ class ComunicazioniUtil {
     $errore = $this->validaComunicazione($avviso, $docente);
     if ($errore > 0) {
       // restituisce messaggio di errore
-      return $messaggi[$errore];
+      return $messaggi[$errore] ?? null;
     }
     // controlla annotazione
     $creaAnnotazione = $form->get('creaAnnotazione')->getData();
@@ -1610,7 +1611,7 @@ class ComunicazioniUtil {
     $errore = $this->validaComunicazione($avviso, $docente);
     if ($errore > 0) {
       // restituisce messaggio di errore
-      return $messaggi[$errore];
+      return $messaggi[$errore] ?? null;
     }
     // controllo data
     if ($avviso->getTipo() != 'A' && $reg->controlloData($avviso->getData(), null)) {
@@ -1672,7 +1673,7 @@ class ComunicazioniUtil {
     $errore = $this->validaComunicazione($avviso, $docente);
     if ($errore > 0) {
       // restituisce messaggio di errore
-      return $messaggi[$errore];
+      return $messaggi[$errore] ?? null;
     }
     // controlla filtro utenti
     if (empty($avviso->getFiltroGenitori())) {
@@ -1758,7 +1759,7 @@ class ComunicazioniUtil {
     $errore = $this->validaComunicazione($avviso, $docente);
     if ($errore > 0) {
       // restituisce messaggio di errore
-      return $messaggi[$errore];
+      return $messaggi[$errore] ?? null;
     }
     // controllo data
     if ($reg->controlloData($avviso->getData(), null)) {
@@ -1948,15 +1949,15 @@ class ComunicazioniUtil {
    * @return array Lista degli utenti destinatari
    */
   private function utentiSpeciali(Comunicazione $comunicazione, array $utenti): array {
-    if (str_contains($comunicazione->getSpeciali(), 'D')) {
+    if (str_contains((string) $comunicazione->getSpeciali(), 'D')) {
       // aggiunge DSGA
       $utenti = array_merge($utenti, $this->em->getRepository(Ata::class)->getIdDsga());
     }
-    if (str_contains($comunicazione->getSpeciali(), 'S')) {
+    if (str_contains((string) $comunicazione->getSpeciali(), 'S')) {
       // aggiunge RSPP
       $utenti = array_merge($utenti, $this->em->getRepository(Utente::class)->getIdRspp());
     }
-    $rappresentanti = array_intersect(['R', 'I', 'P'], str_split($comunicazione->getSpeciali()));
+    $rappresentanti = array_intersect(['R', 'I', 'P'], str_split((string) $comunicazione->getSpeciali()));
     if (!empty($rappresentanti)) {
       // aggiunge rappresentanti
       $utenti = array_merge($utenti, $this->em->getRepository(Utente::class)->getIdRappresentanti($rappresentanti));
