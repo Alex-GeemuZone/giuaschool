@@ -8,12 +8,16 @@
 
 namespace App\Install;
 
+use Closure;
+
 require_once __DIR__.'/DataMigrator.php';
 require_once __DIR__.'/../Exception/InstallException.php';
 require_once __DIR__.'/../Exception/InstallAuthException.php';
+require_once __DIR__.'/../Util/EnvFile.php';
 
 use App\Exception\InstallException;
 use App\Exception\InstallAuthException;
+use App\Util\EnvFile;
 use Exception;
 use PDO;
 use Symfony\Component\PasswordHasher\Hasher\PasswordHasherFactory;
@@ -200,18 +204,16 @@ class Updater {
   //==================== METODI PRIVATI DELLA CLASSE ====================
 
   /**
-   * Legge la configurazione dal file .env
+   * Legge la configurazione da .env.example, .env (compatibilità) e .env.local
    *
    */
   private function readEnv(): void {
-    $path = $this->projectPath.'/.env';
-    // legge .env e carica variabili di ambiente (array vuoto se il file non è leggibile)
-    $dati = parse_ini_file($path);
-    $this->env = is_array($dati) ? $dati : [];
+    // legge il modello e i valori della macchina (questi ultimi hanno la precedenza)
+    $this->env = EnvFile::leggi($this->projectPath);
   }
 
   /**
-   * Scrive la configurazione sul file .env
+   * Scrive la configurazione sul file .env.local
    *
    * @param array $toDelete Lista delle variabili da eliminare
    */
@@ -231,6 +233,10 @@ class Updater {
       'MIMSPID_CLIENT_ID' => ['', 'autenticazione SPID/CIE tramite gateway MIM'],
       'MIMSPID_CLIENT_SECRET' => ['', ],
       'LOG_LEVEL' => ['warning', 'imposta il livello del log del sistema in produzione']];
+    // valori già presenti nella configurazione della macchina (senza il modello)
+    $macchina = EnvFile::leggiMacchina($this->projectPath);
+    // valori scritti esplicitamente in .env.local: hanno la precedenza durante gli aggiornamenti
+    $locale = EnvFile::leggiLocale($this->projectPath);
     // inserisce variabili di ambiente
     $newEnv = '';
     foreach ($vars as $key => $var) {
@@ -239,7 +245,23 @@ class Updater {
         if (!empty($var[1])) {
           $newEnv .= "\n".'### '.$var[1]."\n";
         }
-        $value = (string) ($this->env[$key] ?? $var[0]);
+        if ($key === 'APP_ENV') {
+          // l'installazione e l'aggiornamento sono sempre in produzione
+          $value = 'prod';
+        } elseif ($key === 'APP_SECRET') {
+          // conserva il segreto esistente; ne genera uno nuovo solo se manca o è quello di esempio
+          $segreto = isset($macchina[$key]) ? (string) $macchina[$key] : null;
+          $value = EnvFile::segretoDebole($segreto) ? (string) $var[0] : $segreto;
+        } elseif ($key === 'LOG_LEVEL') {
+          // conserva il livello scelto in .env.local; il vecchio .env non è attendibile
+          $value = (string) ($locale[$key] ?? '');
+          if ($value === '') {
+            $value = (string) $var[0];
+          }
+        } else {
+          // usa il valore corrente (comprese le modifiche già fatte in memoria)
+          $value = (string) ($this->env[$key] ?? $var[0]);
+        }
         $value = str_replace(["\\", "'", "\n", "\r"], ["\\\\", "\\'", '', ''], $value);
         $newEnv .= $key."='".$value."'\n";
       }
@@ -257,10 +279,18 @@ class Updater {
       $newEnv .= "\n".'### altre impostazioni'."\n";
       $newEnv .= $otherVars;
     }
-    // scrive la nuova configurazione
-    $path = $this->projectPath.'/.env';
-    unlink($path);
-    file_put_contents($path, $newEnv);
+    // scrive la nuova configurazione nel file della macchina
+    $path = $this->projectPath.'/'.EnvFile::ENV_LOCAL;
+    if (file_put_contents($path, $newEnv) === false) {
+      throw new InstallException('Impossibile scrivere il file di configurazione ".env.local".');
+    }
+    // il file contiene le credenziali: accessibile solo al proprietario
+    @chmod($path, 0600);
+    // migra il vecchio .env: i valori sono già stati copiati in .env.local
+    $legacy = $this->projectPath.'/'.EnvFile::ENV_LEGACY;
+    if (is_file($legacy)) {
+      @unlink($legacy);
+    }
   }
 
   /**
@@ -317,6 +347,12 @@ class Updater {
     }
     // autenticazione riuscita
     $this->authenticated = true;
+    // migra la configurazione delle installazioni precedenti in .env.local
+    if (!is_file($this->projectPath.'/'.EnvFile::ENV_LOCAL) ||
+        is_file($this->projectPath.'/'.EnvFile::ENV_LEGACY)) {
+      $this->writeEnv([]);
+      $this->readEnv();
+    }
     // controlla versione
     $version = $this->getParameter('versione', '0');
     $build = $this->getParameter('versione_build', '0');
@@ -350,12 +386,13 @@ class Updater {
    */
   private function initInstall(string $token): void {
     // carica variabili di ambiente
-    $path = $this->projectPath.'/.env';
-    if (!file_exists($path)) {
-      // scrive file .env
-      $this->writeEnv([]);
-    }
     $this->readEnv();
+    if (!is_file($this->projectPath.'/'.EnvFile::ENV_LOCAL) ||
+        is_file($this->projectPath.'/'.EnvFile::ENV_LEGACY)) {
+      // crea o migra il file della macchina
+      $this->writeEnv([]);
+      $this->readEnv();
+    }
     // carica variabili di sistema
     $this->readSys();
     // controlla token
@@ -738,9 +775,9 @@ class Updater {
     $this->writeEnv($updates['envDelete']);
     // visualizza pagina
     $page['version'] = $this->sys['version'].($this->sys['build'] == '0' ? '' : '#build');
-    $page['step'] = $step.' - Aggiornamento .env';
-    $page['title'] = 'Aggiornamento del contenuto del file ".env"';
-    $page['success'] = 'Il file ".env" è stato correttamente aggiornato alla nuova versione.';
+    $page['step'] = $step.' - Aggiornamento .env.local';
+    $page['title'] = 'Aggiornamento del contenuto del file ".env.local"';
+    $page['success'] = 'Il file ".env.local" è stato correttamente aggiornato alla nuova versione.';
     $page['url'] = 'update.php?token='.$this->sys['token'].'&step='.($step + 1);
     include $this->publicPath.'/install/update_page.php'; //NOSONAR php:S2003 - la pagina va inclusa a ogni passo/errore
   }
@@ -920,11 +957,11 @@ class Updater {
       'Cartella delle sessioni con permessi di scrittura',
       $test ? 'SI' : 'NO (controlla: "'.$path.'")',
       $test];
-    // file scrivibili: .env
-    $path = $this->projectPath.'/.env';
+    // file scrivibili: .env.local
+    $path = $this->projectPath.'/'.EnvFile::ENV_LOCAL;
     $test = is_writable($path);
     $data['mandatory'][] = [
-      'File di configurazione ".env" con permessi di scrittura',
+      'File di configurazione ".env.local" con permessi di scrittura',
       $test ? 'SI' : 'NO (controlla: "'.$path.'")',
       $test];
     // --- requisiti opzionali ---
@@ -1274,7 +1311,7 @@ class Updater {
     // carica substep
     $subStep = isset($_GET['sub']) ? (int) $_GET['sub'] : 0;
     // controlla che il substep esista e sia una procedura valida
-    if (!isset($updates['procedure'][$subStep]) || !($updates['procedure'][$subStep] instanceof \Closure)) {
+    if (!isset($updates['procedure'][$subStep]) || !($updates['procedure'][$subStep] instanceof Closure)) {
       throw new InstallException('Procedura di aggiornamento non valida', $step);
     }
     // esegue procedura di aggiornamento (le procedure sono Closure e non codice da valutare)
