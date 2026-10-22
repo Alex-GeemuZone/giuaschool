@@ -47,7 +47,7 @@ class OAuth2Controller extends BaseController {
     $request->getSession()->set('login_speciale', 1);
     // redirezione all'ID provider di Google
     return $this->redirectToRoute('login_gsuite');
-	}
+  }
 
   /**
    * Esegue autenticazione su Google Workspace tramite GsuiteAuthenticator

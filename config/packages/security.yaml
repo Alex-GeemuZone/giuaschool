@@ -22,10 +22,8 @@ security:
       custom_authenticators:
         - 'App\Security\MimSpidAuthenticator'
         - 'App\Security\GSuiteAuthenticator'
-        - 'App\Security\FormAuthenticator'
-        - 'App\Security\TokenAuthenticator'
-        - 'App\Security\TokenConnectAuthenticator'
         - 'App\Security\AuthConnectAuthenticator'
+        - 'App\Security\FormAuthenticator'
       entry_point: 'App\Security\AuthenticationEntryPoint'
 
 

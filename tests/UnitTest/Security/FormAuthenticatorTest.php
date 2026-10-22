@@ -143,12 +143,14 @@ class FormAuthenticatorTest extends DatabaseTestCase {
     // session: inserisce in coda session
     $this->mockedSession = $this->createMock(Session::class);
     $this->mockedSession->method('get')->willReturnCallback(
-      function($key, $default=null) { $this->session[$key] ?? $default; });
+      function($key, $default=null) { return $this->session[$key] ?? $default; });
     $this->mockedSession->method('set')->willReturnCallback(
       function($key, $val) { $this->session[$key] = $val; });
     // cache: adattatore in memoria, così la logica di blocco dei tentativi si comporta
     // come in produzione (il callback viene eseguito in caso di cache miss)
     $this->mockedCache = new ArrayAdapter();
+    $this->mockedSession->method('remove')->willReturnCallback(
+      function($key) { unset($this->session[$key]); });
   }
 
   /**
@@ -366,7 +368,7 @@ class FormAuthenticatorTest extends DatabaseTestCase {
     // SPID obbligatorio, login standard
     $utente = $this->getReference('docente_curricolare_1');
     $credenziali = ['password' => 'pass1234', 'otp' => 'otp1234', 'login_speciale' => false, 'ip' => '1.2.3.4'];
-    $this->em->getRepository(Configurazione::class)->setParametro('spid', 'obbligatorio');
+    $this->em->getRepository(Configurazione::class)->setParametro('spid', 'O');
     try {
       $exception = null;
       $res = $fa->checkCredentials($credenziali, $utente);
@@ -383,7 +385,7 @@ class FormAuthenticatorTest extends DatabaseTestCase {
     $this->logs = [];
     $utente = $this->getReference('docente_curricolare_1');
     $credenziali = ['password' => $utente->getUsername(), 'otp' => null, 'login_speciale' => true, 'ip' => '1.2.3.4'];
-    $this->em->getRepository(Configurazione::class)->setParametro('spid', 'obbligatorio');
+    $this->em->getRepository(Configurazione::class)->setParametro('spid', 'O');
     $utente->setOtp('otp1234');
     $utente->setUltimoOtp('');
     $this->em->flush();
@@ -398,11 +400,47 @@ class FormAuthenticatorTest extends DatabaseTestCase {
     $this->assertCount(0, $this->dbLogs);
     $this->assertFalse($this->conf);
     $this->assertCount(0, $this->session);
+    // SPID obbligatorio tranne alunni, login standard
+    $this->logs = [];
+    $utente = $this->getReference('docente_curricolare_1');
+    $credenziali = ['password' => 'pass1234', 'otp' => 'otp1234', 'login_speciale' => false, 'ip' => '1.2.3.4'];
+    $this->em->getRepository(Configurazione::class)->setParametro('spid', 'A');
+    try {
+      $exception = null;
+      $res = $fa->checkCredentials($credenziali, $utente);
+    } catch (CustomUserMessageAuthenticationException $e) {
+      $exception = $e->getMessage();
+    }
+    $this->assertSame('exception.invalid_user_type_form', $exception);
+    $this->assertCount(1, $this->logs);
+    $this->assertSame(['username' => $utente->getUsername(), 'ruolo' => $utente->getCodiceRuolo(), 'ip' => '1.2.3.4'], $this->logs['error'][0][1]);
+    $this->assertCount(0, $this->dbLogs);
+    $this->assertFalse($this->conf);
+    $this->assertCount(0, $this->session);
+    // SPID obbligatorio tranne maggiorenni, login standard
+    $this->logs = [];
+    $utente = $this->getReference('alunno_1A_1');
+    $utente->setDataNascita(new DateTime('-20 years'));
+    $this->em->flush();
+    $credenziali = ['password' => 'pass1234', 'otp' => 'otp1234', 'login_speciale' => false, 'ip' => '1.2.3.4'];
+    $this->em->getRepository(Configurazione::class)->setParametro('spid', 'M');
+    try {
+      $exception = null;
+      $res = $fa->checkCredentials($credenziali, $utente);
+    } catch (CustomUserMessageAuthenticationException $e) {
+      $exception = $e->getMessage();
+    }
+    $this->assertSame('exception.invalid_user_type_form', $exception);
+    $this->assertCount(1, $this->logs);
+    $this->assertSame(['username' => $utente->getUsername(), 'ruolo' => $utente->getCodiceRuolo(), 'ip' => '1.2.3.4'], $this->logs['error'][0][1]);
+    $this->assertCount(0, $this->dbLogs);
+    $this->assertFalse($this->conf);
+    $this->assertCount(0, $this->session);
     // ID provider attivo e ruolo corrispondente, senza login speciale
     $this->logs = [];
     $utente = $this->getReference('docente_curricolare_1');
     $credenziali = ['password' => $utente->getUsername(), 'otp' => null, 'login_speciale' => false, 'ip' => '1.2.3.4'];
-    $this->em->getRepository(Configurazione::class)->setParametro('spid', 'no');
+    $this->em->getRepository(Configurazione::class)->setParametro('spid', 'N');
     try {
       $exception = null;
       $res = $fa->checkCredentials($credenziali, $utente);
