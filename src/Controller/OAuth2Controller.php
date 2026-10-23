@@ -30,8 +30,8 @@ class OAuth2Controller extends BaseController {
    */
   #[Route(path: '/login/gsuite', name: 'login_gsuite')]
   public function google(ClientRegistry $clientRegistry): Response {
-    // redirezione all'ID provider di Google
-    return $clientRegistry->getClient('gsuite')->redirect([], []);
+    // redirezione all'ID provider di Google, chiedendo sempre la scelta dell'account
+    return $clientRegistry->getClient('gsuite')->redirect([], ['prompt' => 'select_account']);
   }
 
   /**
